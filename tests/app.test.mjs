@@ -1,3 +1,4 @@
+import {loginDoctor,patient} from './pc4-auth-helper.mjs';
 import test,{after} from 'node:test';import assert from 'node:assert/strict';import http from 'node:http';import fs from 'node:fs/promises';import os from 'node:os';import path from 'node:path';import crypto from 'node:crypto';
 const runtimeTest=path.join(os.tmpdir(),'triagevoz-tests-main-'+crypto.randomUUID()+'.json');
 process.env.STORAGE_FILE=runtimeTest;
@@ -7,9 +8,10 @@ test('Resumen de demostración no es diagnóstico',()=>{const r=localSummary({re
 test('API local crea, consulta, acusa recepción y responde con datos ficticios',async()=>{const s=http.createServer(handler);await new Promise(ok=>s.listen(0,'127.0.0.1',ok));const url='http://127.0.0.1:'+s.address().port;
 try{const h=await(await fetch(url+'/api/health')).json();assert.equal(h.ok,true);
 const invalid=await fetch(url+'/api/cases',{method:'POST',headers:{'content-type':'application/json'},body:'{}'});assert.equal(invalid.status,422);
-const created=await(await fetch(url+'/api/cases',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({alias:'Persona ficticia',region:'Brazo izquierdo',answers:{motivo:'Molestia articular en codo tras esfuerzo',inicio:'Hace 2 horas',intensidad:'Moderada',adicionales:'Sensación de pesadez local'},summary:'Zona: Brazo izquierdo. Motivo: Molestia articular en codo. Inicio: Hace 2 horas. Intensidad: Moderada.'})})).json();assert.equal(created.status,'enviado');assert.ok(created.code);
-const ack=await(await fetch(url+'/api/cases/ack',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({code:created.code})})).json();assert.equal(ack.status,'recibido');
-const rep=await(await fetch(url+'/api/cases/reply',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({code:created.code,message:'Respuesta simulada'})})).json();assert.equal(rep.replies.length,1);
+const created=await(await fetch(url+'/api/cases',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({...patient,alias:'Persona ficticia',region:'Brazo izquierdo',answers:{motivo:'Molestia articular en codo tras esfuerzo',inicio:'Hace 2 horas',intensidad:'Moderada',adicionales:'Sensación de pesadez local'},summary:'Zona: Brazo izquierdo. Motivo: Molestia articular en codo. Inicio: Hace 2 horas. Intensidad: Moderada.'})})).json();assert.equal(created.status,'enviado');assert.ok(created.code);
+const cookie=await loginDoctor(url);
+const ack=await(await fetch(url+'/api/cases/ack',{method:'POST',headers:{cookie,'content-type':'application/json'},body:JSON.stringify({code:created.code})})).json();assert.equal(ack.status,'recibido');
+const rep=await(await fetch(url+'/api/cases/reply',{method:'POST',headers:{cookie,'content-type':'application/json'},body:JSON.stringify({code:created.code,message:'Respuesta simulada'})})).json();assert.equal(rep.replies.length,1);
 const find=await(await fetch(url+'/api/cases/by-code?code='+created.code)).json();assert.equal(find.code,created.code);
 }finally{await new Promise(ok=>s.close(ok))}});
 test('Interfaz principal sin banner ni pie académico y con límites de IA visibles en el resumen',async()=>{
@@ -74,7 +76,8 @@ test('Multiusuario: salas de teleconsulta colaborativas y bandeja de salas activ
  await new Promise(ok=>s.listen(0,'127.0.0.1',ok));
  const url='http://127.0.0.1:'+s.address().port;
  try{
-  const rooms=await(await fetch(url+'/api/rooms')).json();
+  const cookie=await loginDoctor(url);
+  const rooms=await(await fetch(url+'/api/rooms',{headers:{cookie}})).json();
   assert.ok(Array.isArray(rooms));
   assert.ok(rooms.length>0);
   assert.ok(rooms[0].code);

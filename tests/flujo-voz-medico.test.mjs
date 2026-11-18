@@ -1,3 +1,4 @@
+import {loginDoctor,patient} from './pc4-auth-helper.mjs';
 import test,{after} from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
@@ -23,12 +24,13 @@ test('PC3: confirmar por voz guarda un código y el médico publica su respuesta
   const server=http.createServer(handler);
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   const base='http://127.0.0.1:'+server.address().port;
+  let cookie='';
   const post=async(route,body)=>{
-    const response=await fetch(base+route,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+    const response=await fetch(base+route,{method:'POST',headers:{'content-type':'application/json',...(cookie?{cookie}:{})},body:JSON.stringify(body)});
     assert.equal(response.status,200);return response.json();
   };
   try{
-    let result=await post('/api/assistant/start',{lang:'es'});
+    let result=await post('/api/assistant/start',{lang:'es',patient});
     const session=result.session;
     for(const answer of ['dolor de cabeza','desde ayer','moderado','sin otros síntomas']){
       result=await post('/api/assistant/reply',{session,text:answer,region:'Cabeza'});
@@ -42,6 +44,7 @@ test('PC3: confirmar por voz guarda un código y el médico publica su respuesta
     assert.equal(repeat.caseCode,code,'Confirmación repetida no crea un nuevo caso');
     let response=await fetch(base+'/api/cases/by-code?code='+encodeURIComponent(code));
     let record=await response.json();assert.equal(record.region,'Cabeza');assert.equal(record.replies.length,0);
+    cookie=await loginDoctor(base);
     const draft=await post('/api/doctor/reply-draft',{code,preset:'profesional'});
     assert.match(draft.draft,/No se emite diagnóstico ni receta/);
     assert.equal((await fetch(base+'/api/doctor/draft',{method:'POST',body:'{}'})).status,404,'La propuesta con hipótesis diagnósticas ya no existe');

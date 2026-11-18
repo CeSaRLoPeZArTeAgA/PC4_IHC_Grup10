@@ -1,0 +1,427 @@
+[
+  {
+    "id": "e3993494-975c-4c7e-9628-5c16f12ce0ab",
+    "code": "HUANCA01",
+    "alias": "Posta Huancavelica · Paciente con lumbalgia",
+    "region": "Espalda baja (lumbar)",
+    "answers": {
+      "motivo": "Dolor punzante e incapacitante al intentar agacharse tras cargar sacos en la cosecha",
+      "inicio": "Hace 2 días tras jornada agrícola pesada",
+      "intensidad": "Severa (8/10), empeora notablemente al ponerse de pie",
+      "adicionales": "Rigidez lumbar matutina y dificultad para caminar distancias medias"
+    },
+    "summary": "Zona: Espalda baja (lumbar). Motivo: Dolor punzante e incapacitante al intentar agacharse tras cargar sacos en la cosecha. Inicio: Hace 2 días tras jornada agrícola pesada. Intensidad: Severa (8/10), empeora notablemente al ponerse de pie. Adicionales: Rigidez lumbar matutina y dificultad para caminar distancias medias.",
+    "priority": "Pendiente de valoración del personal sanitario",
+    "status": "enviado",
+    "createdAt": "2026-11-11T11:49:46.072Z",
+    "ackAt": null,
+    "replies": []
+  },
+  {
+    "id": "2b479cd2-7529-44eb-a04f-32f58a31a26b",
+    "code": "CAJATA02",
+    "alias": "Posta Cajatambo · Paciente adulto mayor",
+    "region": "Tórax",
+    "answers": {
+      "motivo": "Sensación de opresión en el pecho al caminar en subida y dificultad para respirar",
+      "inicio": "Esta madrugada (hace aproximadamente 6 horas)",
+      "intensidad": "Moderada a fuerte (7/10), se alivia parcialmente con el reposo",
+      "adicionales": "Mareos leves, sudoración fría y sensación de fatiga rápida"
+    },
+    "summary": "Zona: Tórax. Motivo: Sensación de opresión en el pecho al caminar en subida y dificultad para respirar. Inicio: Esta madrugada (hace aproximadamente 6 horas). Intensidad: Moderada a fuerte (7/10), se alivia parcialmente con el reposo. Adicionales: Mareos leves, sudoración fría y sensación de fatiga rápida.",
+    "priority": "Pendiente de valoración del personal sanitario",
+    "status": "recibido",
+    "createdAt": "2026-11-11T12:19:46.074Z",
+    "ackAt": "2026-11-11T13:09:46.074Z",
+    "replies": [
+      {
+        "author": "Médico remoto (demo, no autenticado)",
+        "message": "Caso ficticio recibido. Pendiente de revisión del personal de salud; no se generan indicaciones clínicas automáticas.",
+        "createdAt": "2026-11-11T13:34:46.074Z"
+      }
+    ]
+  },
+  {
+    "id": "6a8b1152-7733-477f-a5fb-46bc5b6ac18c",
+    "code": "ANDAHU03",
+    "alias": "Posta Andahuaylas · Paciente comunitaria",
+    "region": "Cabeza",
+    "answers": {
+      "motivo": "Dolor de cabeza pulsátil continuo con molestia acentuada a la luz solar",
+      "inicio": "Hace 3 días, con incremento de intensidad ayer por la tarde",
+      "intensidad": "Moderada (6/10), pulsátil en la región frontal y temporal",
+      "adicionales": "Náuseas leves sin vómitos, molestia ante ruidos fuertes"
+    },
+    "summary": "Zona: Cabeza. Motivo: Dolor de cabeza pulsátil continuo con molestia acentuada a la luz solar. Inicio: Hace 3 días, con incremento de intensidad ayer por la tarde. Intensidad: Moderada (6/10), pulsátil en la región frontal y temporal. Adicionales: Náuseas leves sin vómitos, molestia ante ruidos fuertes.",
+    "priority": "Pendiente de valoración del personal sanitario",
+    "status": "enviado",
+    "createdAt": "2026-11-11T12:49:46.074Z",
+    "ackAt": null,
+    "replies": []
+  },
+  {
+    "id": "109fae3a-a510-4e1a-bba2-25e43d7c5fba",
+    "code": "PAUCAR04",
+    "alias": "Posta Paucartambo · Joven agricultor",
+    "region": "Pierna derecha",
+    "answers": {
+      "motivo": "Hinchazón y dolor en el tobillo y pantorrilla tras pisar en falso en terreno comunal",
+      "inicio": "Ayer por la tarde durante labores en campo",
+      "intensidad": "Moderada (5/10), dolor agudo al intentar apoyar el peso del cuerpo",
+      "adicionales": "Edema local evidente y aumento de calor, sin herida visible"
+    },
+    "summary": "Zona: Pierna derecha. Motivo: Hinchazón y dolor en el tobillo y pantorrilla tras pisar en falso en terreno comunal. Inicio: Ayer por la tarde durante labores en campo. Intensidad: Moderada (5/10), dolor agudo al intentar apoyar el peso del cuerpo. Adicionales: Edema local evidente y aumento de calor, sin herida visible.",
+    "priority": "Pendiente de valoración del personal sanitario",
+    "status": "recibido",
+    "createdAt": "2026-11-11T13:19:46.074Z",
+    "ackAt": "2026-11-11T13:49:46.074Z",
+    "replies": [
+      {
+        "author": "Médico remoto (demo, no autenticado)",
+        "message": "Caso ficticio recibido. Pendiente de revisión del personal de salud; no se generan indicaciones clínicas automáticas.",
+        "createdAt": "2026-11-11T14:04:46.074Z"
+      }
+    ]
+  },
+  {
+    "id": "8237ef48-3353-41de-a535-3011c1825612",
+    "code": "YAUYOS05",
+    "alias": "Posta Yauyos · Paciente comunero",
+    "region": "Abdomen",
+    "answers": {
+      "motivo": "Dolor abdominal tipo cólico difuso y retorcijones frecuentes tras ingesta de alimentos",
+      "inicio": "Ayer por la noche (hace aproximadamente 14 horas)",
+      "intensidad": "Moderada e intermitente (6/10), con espasmos periódicos",
+      "adicionales": "Sensación de sequedad bucal y sed constante"
+    },
+    "summary": "Zona: Abdomen. Motivo: Dolor abdominal tipo cólico difuso y retorcijones frecuentes tras ingesta de alimentos. Inicio: Ayer por la noche (hace aproximadamente 14 horas). Intensidad: Moderada e intermitente (6/10), con espasmos periódicos. Adicionales: Sensación de sequedad bucal y sed constante.",
+    "priority": "Pendiente de valoración del personal sanitario",
+    "status": "enviado",
+    "createdAt": "2026-11-11T13:49:46.074Z",
+    "ackAt": null,
+    "replies": []
+  },
+  {
+    "id": "5f9b316f-486d-4f78-920e-25d3bfcf96f2",
+    "code": "CHUMBI06",
+    "alias": "Posta Chumbivilcas · Trabajadora textil",
+    "region": "Brazo derecho",
+    "answers": {
+      "motivo": "Dolor muscular continuo y sensación de adormecimiento desde el hombro hasta el antebrazo",
+      "inicio": "Progresivo desde hace 4 días durante trabajo en telar tradicional",
+      "intensidad": "Leve a moderada (4/10), aumenta al sostener herramientas",
+      "adicionales": "Sensación de hormigueo en dedos pulgar e índice de la mano derecha"
+    },
+    "summary": "Zona: Brazo derecho. Motivo: Dolor muscular continuo y sensación de adormecimiento desde el hombro hasta el antebrazo. Inicio: Progresivo desde hace 4 días durante trabajo en telar tradicional. Intensidad: Leve a moderada (4/10), aumenta al sostener herramientas. Adicionales: Sensación de hormigueo en dedos pulgar e índice de la mano derecha.",
+    "priority": "Pendiente de valoración del personal sanitario",
+    "status": "recibido",
+    "createdAt": "2026-11-11T14:19:46.074Z",
+    "ackAt": "2026-11-11T14:29:46.074Z",
+    "replies": [
+      {
+        "author": "Médico remoto (demo, no autenticado)",
+        "message": "Caso ficticio recibido. Pendiente de revisión del personal de salud; no se generan indicaciones clínicas automáticas.",
+        "createdAt": "2026-11-11T14:34:46.074Z"
+      }
+    ]
+  },
+  {
+    "id": "1a8ff248-84c4-41df-908f-9b690bbea707",
+    "code": "ED1AC9789F56",
+    "alias": "Paciente de voz (demo)",
+    "region": "Cabeza",
+    "answers": {
+      "motivo": "dolor de cabeza",
+      "inicio": "desde ayer",
+      "intensidad": "moderado",
+      "adicionales": "sin otros síntomas"
+    },
+    "summary": "Zona: Cabeza. Motivo: dolor de cabeza. Inicio: desde ayer. Intensidad: moderado. Otros: sin otros síntomas.",
+    "priority": "Pendiente de valoración del personal sanitario",
+    "status": "enviado",
+    "createdAt": "2026-11-11T14:49:46.164Z",
+    "ackAt": null,
+    "replies": [
+      {
+        "author": "Médico remoto (demo, no autenticado)",
+        "message": "Respuesta profesional revisada para este caso ficticio.",
+        "createdAt": "2026-11-11T14:49:46.191Z"
+      }
+    ]
+  },
+  {
+    "id": "98026d2f-a41d-4cdc-9bd3-dfb03defd47f",
+    "code": "596E8AF813FA",
+    "alias": "Paciente de voz (demo)",
+    "region": "Cabeza",
+    "answers": {
+      "motivo": "Me está doliendo la cabeza",
+      "inicio": "hace una semana",
+      "intensidad": "parte",
+      "adicionales": "No, no tengo más síntomas."
+    },
+    "summary": "Zona: Cabeza. Motivo: Me está doliendo la cabeza. Inicio: hace una semana. Intensidad: parte. Otros: No, no tengo más síntomas..",
+    "priority": "Pendiente de valoración del personal sanitario",
+    "status": "enviado",
+    "createdAt": "2026-11-11T18:02:59.563Z",
+    "ackAt": null,
+    "replies": []
+  },
+  {
+    "id": "318b5e35-c418-4c8a-a1a6-83d05e9b8e87",
+    "code": "2FD631CF35DE",
+    "alias": "Paciente de voz (demo)",
+    "region": "Cabeza",
+    "answers": {
+      "motivo": "Mi principal molestia es la cabeza.",
+      "inicio": "Una semana.",
+      "intensidad": "parte",
+      "adicionales": "No, no tengo más síntomas."
+    },
+    "summary": "Zona: Cabeza. Motivo: Mi principal molestia es la cabeza.. Inicio: Una semana.. Intensidad: parte. Otros: No, no tengo más síntomas..",
+    "priority": "Pendiente de valoración del personal sanitario",
+    "status": "enviado",
+    "createdAt": "2026-11-11T18:05:25.342Z",
+    "ackAt": null,
+    "replies": [
+      {
+        "author": "Médico remoto (demo, no autenticado)",
+        "message": "Buenos días: Gracias por confiar en nosotros; he recibido el caso con atención. Imagino que esta situación puede ser incómoda; gracias por compartirla. Mientras se valora el caso, con interés en ayudar: reposo en un lugar tranquilo y con poca luz; beba agua a sorbos y con frecuencia; anote la temperatura si hay termómetro. Consultar de inmediato si: dolor de cabeza súbito e intenso, distinto a lo habitual; fiebre alta que no cede, rigidez de cuello o vómitos repetidos; confusión, visión doble, dificultad para hablar o pérdida de fuerza. Datos a confirmar: hora exacta de inicio del malestar, temperatura si hay termómetro y medicamentos que ya tomó hoy. Puede ampliar cualquier dato cuando lo n",
+        "createdAt": "2026-11-11T20:48:53.766Z"
+      }
+    ]
+  },
+  {
+    "id": "fdb68238-3158-4d1e-8611-56f247834397",
+    "code": "64CB25643806",
+    "alias": "Paciente de voz (demo)",
+    "region": "",
+    "answers": {
+      "motivo": "El Torat.",
+      "inicio": "una semana",
+      "intensidad": "era...",
+      "adicionales": "más síntomas."
+    },
+    "summary": "Zona: no declarada. Motivo: El Torat.. Inicio: una semana. Intensidad: era.... Otros: más síntomas..",
+    "priority": "Pendiente de valoración del personal sanitario",
+    "status": "enviado",
+    "createdAt": "2026-11-11T18:12:51.572Z",
+    "ackAt": null,
+    "replies": []
+  },
+  {
+    "id": "76dafc61-182a-4825-b07d-d942e6a94a7b",
+    "code": "03BAD38C3ED4",
+    "alias": "Paciente de voz (demo)",
+    "region": "Cabeza",
+    "answers": {
+      "motivo": "dolor de cabeza",
+      "inicio": "desde ayer",
+      "intensidad": "moderado",
+      "adicionales": "sin otros síntomas"
+    },
+    "summary": "Zona: Cabeza. Motivo: dolor de cabeza. Inicio: desde ayer. Intensidad: moderado. Otros: sin otros síntomas.",
+    "priority": "Pendiente de valoración del personal sanitario",
+    "status": "enviado",
+    "createdAt": "2026-11-11T18:19:57.443Z",
+    "ackAt": null,
+    "replies": [
+      {
+        "author": "Médico remoto (demo, no autenticado)",
+        "message": "Respuesta profesional revisada para este caso ficticio.",
+        "createdAt": "2026-11-11T18:19:59.427Z"
+      }
+    ]
+  },
+  {
+    "id": "8dcb6bf2-2d28-46ad-9999-842f830d1b5c",
+    "code": "67BE55288703",
+    "alias": "Paciente de voz (demo)",
+    "region": "",
+    "answers": {
+      "motivo": "Me está doliendo el pie derecho",
+      "inicio": "hace dos días",
+      "intensidad": "explicado.",
+      "adicionales": "más síntomas"
+    },
+    "summary": "Zona: no declarada. Motivo: Me está doliendo el pie derecho. Inicio: hace dos días. Intensidad: explicado.. Otros: más síntomas.",
+    "priority": "Pendiente de valoración del personal sanitario",
+    "status": "recibido",
+    "createdAt": "2026-11-11T18:23:43.353Z",
+    "ackAt": "2026-11-11T18:24:26.674Z",
+    "replies": [
+      {
+        "author": "Médico remoto (demo, no autenticado)",
+        "message": "BORRADOR IA — REVISIÓN MÉDICA OBLIGATORIA\n\n**1) Resumen del caso**  \nPaciente refiere dolor en el pie derecho con inicio hace 2 días. La intensidad está “explicada” (no se detalla) y menciona la presencia de “más síntomas” sin especificar.\n\n**2) Hipótesis diagnósticas diferenciales (posibles, con incertidumbre)**  \n- Lesión traumática (esguince, fractura, contusión).  \n- Procesos inflamatorios/degenerativos (tendinitis, fascitis plantar, artritis).  \n- Gota o pseudogota aguda.  \n- Infección local (celulitis, absceso, osteomielitis).  \n- Neuropatía periférica o compresión nerviosa.  \n\n**Datos faltantes**: mecanismo exacto del dolor, localización precisa, presencia de edema, calor, enrojecimie",
+        "createdAt": "2026-11-11T18:24:36.714Z"
+      },
+      {
+        "author": "Médico remoto (demo, no autenticado)",
+        "message": "Hola, gracias por contactarnos.  \nLamento que estés sintiendo dolor en el pie derecho desde hace dos días.  \nMientras se valora el caso: mantenga reposo relativo; beba agua con frecuencia; anote cómo cambian los síntomas con las horas.  \nConsultar de inmediato si: empeoramiento rápido del malestar; fiebre alta que no",
+        "createdAt": "2026-11-11T19:42:18.729Z"
+      }
+    ]
+  },
+  {
+    "id": "09187f0e-c82f-4224-88df-5aa637f1bc39",
+    "code": "BF76C5B72A6B",
+    "alias": "Paciente de voz (demo)",
+    "region": "Cabeza",
+    "answers": {
+      "motivo": "dolor de cabeza",
+      "inicio": "desde ayer",
+      "intensidad": "moderado",
+      "adicionales": "sin otros síntomas"
+    },
+    "summary": "Zona: Cabeza. Motivo: dolor de cabeza. Inicio: desde ayer. Intensidad: moderado. Otros: sin otros síntomas.",
+    "priority": "Pendiente de valoración del personal sanitario",
+    "status": "enviado",
+    "createdAt": "2026-11-11T18:32:49.013Z",
+    "ackAt": null,
+    "replies": [
+      {
+        "author": "Médico remoto (demo, no autenticado)",
+        "message": "Respuesta profesional revisada para este caso ficticio.",
+        "createdAt": "2026-11-11T18:32:51.169Z"
+      }
+    ]
+  },
+  {
+    "id": "ed4ca861-1f16-40dd-ac8a-de0aeb6cda87",
+    "code": "5B0E22BAFE23",
+    "alias": "Paciente de voz (demo)",
+    "region": "Cabeza",
+    "answers": {
+      "motivo": "Mi molestia es dolor de cabeza",
+      "inicio": "hace una semana",
+      "intensidad": "la molestia",
+      "adicionales": "Si, en dolor de cintura"
+    },
+    "summary": "Zona: Cabeza. Motivo: Mi molestia es dolor de cabeza. Inicio: hace una semana. Intensidad: la molestia. Otros: Si, en dolor de cintura.",
+    "priority": "Pendiente de valoración del personal sanitario",
+    "status": "enviado",
+    "createdAt": "2026-11-11T18:34:24.540Z",
+    "ackAt": null,
+    "replies": []
+  },
+  {
+    "id": "28accbc5-e81f-4e9f-b606-9047158ef087",
+    "code": "850C08C2DC7A",
+    "alias": "Paciente de voz (demo)",
+    "region": "Cabeza",
+    "answers": {
+      "motivo": "dolor de cabeza",
+      "inicio": "desde ayer",
+      "intensidad": "moderado",
+      "adicionales": "sin otros síntomas"
+    },
+    "summary": "Zona: Cabeza. Motivo: dolor de cabeza. Inicio: desde ayer. Intensidad: moderado. Otros: sin otros síntomas.",
+    "priority": "Pendiente de valoración del personal sanitario",
+    "status": "enviado",
+    "createdAt": "2026-11-11T18:46:48.608Z",
+    "ackAt": null,
+    "replies": [
+      {
+        "author": "Médico remoto (demo, no autenticado)",
+        "message": "Respuesta profesional revisada para este caso ficticio.",
+        "createdAt": "2026-11-11T18:46:50.775Z"
+      }
+    ]
+  },
+  {
+    "id": "3025b949-8b5f-444d-a67c-2ed87c80e0f9",
+    "code": "ECC974D06A68",
+    "alias": "Paciente de voz (demo)",
+    "region": "Cabeza",
+    "answers": {
+      "motivo": "Me está dando la cabeza",
+      "inicio": "hace una semana.",
+      "intensidad": "moderada moderada",
+      "adicionales": "más síntomas"
+    },
+    "summary": "Zona: Cabeza. Motivo: Me está dando la cabeza. Inicio: hace una semana.. Intensidad: moderada moderada. Otros: más síntomas.",
+    "priority": "Pendiente de valoración del personal sanitario",
+    "status": "enviado",
+    "createdAt": "2026-11-11T18:48:15.360Z",
+    "ackAt": null,
+    "replies": []
+  },
+  {
+    "id": "d0bca5e1-dcf6-48d8-b22a-ac360e0a6768",
+    "code": "359B7FCA5EEA",
+    "alias": "Paciente de prueba",
+    "region": "Cabeza",
+    "answers": {
+      "motivo": "dolor",
+      "inicio": "2 dias",
+      "intensidad": "leve",
+      "adicionales": "no"
+    },
+    "summary": "Zona: Cabeza. Motivo: dolor. Inicio: 2 dias. Intensidad: leve. Otros: no.",
+    "priority": "Pendiente de valoración del personal sanitario",
+    "status": "enviado",
+    "createdAt": "2026-11-11T18:50:54.418Z",
+    "ackAt": null,
+    "replies": []
+  },
+  {
+    "id": "a35c2060-93b2-43d7-86de-487a7221919e",
+    "code": "0FCE90DA175B",
+    "alias": "Paciente de voz (demo)",
+    "region": "Cabeza",
+    "answers": {
+      "motivo": "dolor de cabeza",
+      "inicio": "desde ayer",
+      "intensidad": "moderado",
+      "adicionales": "sin otros síntomas"
+    },
+    "summary": "Zona: Cabeza. Motivo: dolor de cabeza. Inicio: desde ayer. Intensidad: moderado. Otros: sin otros síntomas.",
+    "priority": "Pendiente de valoración del personal sanitario",
+    "status": "enviado",
+    "createdAt": "2026-11-11T18:58:27.011Z",
+    "ackAt": null,
+    "replies": [
+      {
+        "author": "Médico remoto (demo, no autenticado)",
+        "message": "Respuesta profesional revisada para este caso ficticio.",
+        "createdAt": "2026-11-11T18:58:29.009Z"
+      }
+    ]
+  },
+  {
+    "id": "607fbcc7-de05-4475-8bf2-2375a022aab0",
+    "code": "EFEDB7DDC3E7",
+    "alias": "Paciente de voz (demo)",
+    "region": "Cabeza",
+    "answers": {
+      "motivo": "Umaymi nanawan",
+      "inicio": "Iskay p'unchayñam.",
+      "intensidad": "Arí, anchata nanawan.",
+      "adicionales": "Arí, anchata nanawan."
+    },
+    "summary": "Zona: Cabeza. Motivo: Umaymi nanawan. Inicio: Iskay p'unchayñam.. Intensidad: Arí, anchata nanawan.. Otros: Arí, anchata nanawan..",
+    "priority": "Pendiente de valoración del personal sanitario",
+    "status": "enviado",
+    "createdAt": "2026-11-11T20:19:21.737Z",
+    "ackAt": null,
+    "replies": []
+  },
+  {
+    "id": "73bea319-d245-4eab-a1a0-996ec1ba437b",
+    "code": "49C900ED76A6",
+    "alias": "Paciente de voz (demo)",
+    "region": "Cabeza",
+    "answers": {
+      "motivo": "Me duele la cabeza Es el momento de este punto",
+      "inicio": "desde hace una semana",
+      "intensidad": "fuerte fuerte",
+      "adicionales": "y monses"
+    },
+    "summary": "Zona: Cabeza. Motivo: Me duele la cabeza Es el momento de este punto. Inicio: desde hace una semana. Intensidad: fuerte fuerte. Otros: y monses.",
+    "priority": "Pendiente de valoración del personal sanitario",
+    "status": "enviado",
+    "createdAt": "2026-11-11T20:25:27.080Z",
+    "ackAt": null,
+    "replies": []
+  }
+]

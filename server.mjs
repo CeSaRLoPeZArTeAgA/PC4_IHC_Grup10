@@ -49,6 +49,24 @@ if(!cases.length){
 if(sqliteStore&&cases.length)sqliteStore.saveCases(cases);
 const mime={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.jpg':'image/jpeg','.jpeg':'image/jpeg','.png':'image/png','.json':'application/json','.webmanifest':'application/manifest+json'};
 const str=(s,n=700)=>String(s??'').trim().slice(0,n);
+const cleanDni=value=>str(value,16);
+const validDni=value=>/^\d{8}$/.test(value);
+const validNombre=value=>/^[\p{L}][\p{L}\p{M} .'-]{2,99}$/u.test(value);
+// La búsqueda por DNI solo satisface la DEMO; un DNI no es un factor de autenticación.
+const doctorSessions=new Map();
+const loginAttempts=new Map();
+const fallbackDoctors=['Dra. Ana Quispe','Dr. Luis Rojas','Dra. María Huamán','Dr. Carlos Medina'].map((nombre,i)=>({id:i+1,nombre}));
+const listDoctors=()=>sqliteStore?sqliteStore.listDoctors():fallbackDoctors;
+const verifyDoctor=(id,password)=>sqliteStore?sqliteStore.verifyDoctor(id,password):(password==='123456'?fallbackDoctors.find(d=>d.id===Number(id))||null:null);
+function authorizedDoctor(req){
+ const token=(req.headers.cookie||'').split(';').map(s=>s.trim()).find(v=>v.startsWith('tv_staff='))?.slice(9);
+ const session=token&&doctorSessions.get(token);
+ if(!session)return null;
+ if(session.until<Date.now()){doctorSessions.delete(token);return null;}
+ return session.doctor;
+}
+function doctorRequired(req,res){const doctor=authorizedDoctor(req);if(!doctor)send(res,401,{error:'Inicia sesión como personal de salud.'});return doctor;}
+function setAuthCookie(res,token,maxAge){res.setHeader('Set-Cookie',`tv_staff=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${maxAge}`)}
 const send=(res,status,obj)=>{res.writeHead(status,{'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'});res.end(JSON.stringify(obj));};
 async function read(req){let s='';for await(const chunk of req){s+=chunk;if(s.length>120000)throw Error('too large');}try{return JSON.parse(s||'{}')}catch{throw Error('invalid JSON')}}
 async function readAudio(req){let s='';for await(const chunk of req){s+=chunk;if(s.length>6500000)throw Error('too large')}try{return JSON.parse(s||'{}')}catch{throw Error('invalid JSON')}}
@@ -89,12 +107,13 @@ function save(){
   pendingSave=next;
   return next;
 }
-const clean=(x)=>{const a=x?.answers||{};return {alias:str(x?.alias,35)||'Paciente simulado',region:str(x?.region,90),answers:{motivo:str(a.motivo),inicio:str(a.inicio),intensidad:str(a.intensidad,80),adicionales:str(a.adicionales)},summary:str(x?.summary,1600),priority:'Pendiente de valoración del personal sanitario'};};
+const clean=(x)=>{const a=x?.answers||{};return {alias:str(x?.alias,35)||'Paciente simulado',dni:cleanDni(x?.dni),nombre:str(x?.nombre,100),region:str(x?.region,90),answers:{motivo:str(a.motivo),inicio:str(a.inicio),intensidad:str(a.intensidad,80),adicionales:str(a.adicionales)},summary:str(x?.summary,1600),priority:'Pendiente de valoración del personal sanitario'};};
 function localSummary(raw){const c=clean(raw);return {mode:'simulacion',summary:['Zona: '+(c.region||'no declarada'),'Motivo: '+(c.answers.motivo||'no declarado'),'Inicio: '+(c.answers.inicio||'no declarado'),'Intensidad: '+(c.answers.intensidad||'no declarada'),'Otros: '+(c.answers.adicionales||'no declarados')].join('. ')+'.',priority:'Pendiente de valoración del personal sanitario',disclaimer:'Solo resumen orientativo del relato ficticio; no constituye diagnóstico ni clasificación clínica.'};}
 async function summarize(raw){const fallback=localSummary(raw);const key=process.env.GEMINI_API_KEY;if(!key)return fallback;
 const model=process.env.GEMINI_MODEL||'gemini-2.5-flash';
 const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),14000);
-try{const prompt='Estructura SOLO el relato ficticio sin inventar datos, sin diagnóstico ni tratamiento. Devuelve JSON {"summary":"..."} de máximo 1200 caracteres. Datos: '+JSON.stringify(clean(raw));
+try{const {dni:unusedDni,nombre:unusedNombre,...clinicalData}=clean(raw);
+const prompt='Estructura SOLO el relato ficticio sin inventar datos, sin diagnóstico ni tratamiento. Devuelve JSON {"summary":"..."} de máximo 1200 caracteres. Datos: '+JSON.stringify(clinicalData);
 const rsp=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{method:'POST',signal:ctl.signal,headers:{'content-type':'application/json','x-goog-api-key':key},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.2,responseMimeType:'application/json'}})});
 if(!rsp.ok)throw Error('LLM unavailable');const obj=await rsp.json();const s=obj.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('')||'{}';const parsed=JSON.parse(s);if(!parsed.summary||typeof parsed.summary!=='string')throw Error('LLM invalid');
 return {...fallback,mode:'gemini',summary:parsed.summary.slice(0,1400),disclaimer:'Generado por IA sin validación médica.'};
@@ -135,14 +154,19 @@ if(req.method==='GET'&&u.pathname==='/api/gemini/models'){
  const result=await listGeminiModels(process.env.GEMINI_API_KEY);
  return send(res,200,{...result,configured:!!process.env.GEMINI_API_KEY,selectedAudioModel:process.env.GEMINI_AUDIO_MODEL||process.env.GEMINI_MODEL||'gemini-3.8-flash'});
 }
-if(req.method==='POST'&&u.pathname==='/api/assistant/start'){const b=await read(req);return send(res,200,newSession(b.lang,b.persona,b.personality))}
+if(req.method==='POST'&&u.pathname==='/api/assistant/start'){
+ const b=await read(req),dni=cleanDni(b.patient?.dni),nombre=str(b.patient?.nombre,100);
+ if(!validDni(dni)||!validNombre(nombre))return send(res,422,{error:'Registra un DNI de 8 dígitos y el nombre del paciente antes del triaje.'});
+ return send(res,200,newSession(b.lang,b.persona,b.personality,{dni,nombre}));
+}
 if(req.method==='POST'&&u.pathname==='/api/assistant/reply'){
  const b=await read(req),result=await replyTo(b);
  if(result.route==='confirmacion'){
   const s=confirmedSession(result.session);
   if(s){
    if(!s.caseCode){
-    const obj=clean({alias:'Paciente de voz (demo)',region:b.region,answers:s.slots});obj.summary=localSummary(obj).summary;
+    if(!validDni(s.patient?.dni)||!validNombre(s.patient?.nombre))return send(res,422,{error:'La sesión de voz no tiene paciente identificado. Vuelve a iniciar el triaje.'});
+    const obj=clean({alias:s.patient.nombre,dni:s.patient.dni,nombre:s.patient.nombre,region:b.region,answers:s.slots});obj.summary=localSummary(obj).summary;
     const rec={id:crypto.randomUUID(),code:crypto.randomBytes(6).toString('hex').toUpperCase(),...obj,status:'enviado',createdAt:new Date().toISOString(),ackAt:null,replies:[]};
     cases.push(rec);s.caseCode=rec.code;await save();
    }
@@ -173,16 +197,42 @@ if(u.pathname==='/api/profiles'&&req.method==='PUT'){
   }
   return send(res,200,{id,profile:allowed});
 }
+if(req.method==='GET'&&u.pathname==='/api/doctor/list')return send(res,200,listDoctors());
+if(req.method==='GET'&&u.pathname==='/api/doctor/me'){
+ const doctor=authorizedDoctor(req);return doctor?send(res,200,{doctor}):send(res,401,{error:'Sesión no iniciada'});
+}
+if(req.method==='POST'&&u.pathname==='/api/doctor/login'){
+ const b=await read(req),id=Number(b.id),pw=String(b.password||'');
+ const k=String(id),entry=loginAttempts.get(k)||{n:0,until:0};
+ if(entry.until>Date.now())return send(res,429,{error:'Demasiados intentos. Reintenta en un minuto.'});
+ const doctor=verifyDoctor(id,pw);
+ if(!doctor){const n=entry.n+1;loginAttempts.set(k,{n:n>=5?0:n,until:n>=5?Date.now()+60000:0});return send(res,401,{error:'Usuario o contraseña incorrectos.'});}
+ loginAttempts.delete(k);
+ const token=crypto.randomBytes(32).toString('hex');doctorSessions.set(token,{doctor,until:Date.now()+8*3600_000});
+ setAuthCookie(res,token,8*3600);return send(res,200,{doctor});
+}
+if(req.method==='POST'&&u.pathname==='/api/doctor/logout'){
+ const token=(req.headers.cookie||'').split(';').map(s=>s.trim()).find(v=>v.startsWith('tv_staff='))?.slice(9);
+ if(token)doctorSessions.delete(token);
+ setAuthCookie(res,'',0);return send(res,200,{ok:true});
+}
+if(req.method==='GET'&&u.pathname==='/api/cases/by-dni'){
+ const dni=cleanDni(u.searchParams.get('dni'));
+ if(!validDni(dni))return send(res,422,{error:'El DNI debe tener exactamente 8 dígitos.'});
+ const found=sqliteStore?sqliteStore.listCasesByDni(dni):cases.filter(c=>c.dni===dni).slice().reverse().map(c=>({code:c.code,dni:c.dni,nombre:c.nombre,region:c.region,motivo:c.answers?.motivo||'',status:c.status,createdAt:c.createdAt,repliesCount:c.replies?.length||0,attended:!!c.replies?.length}));
+ return send(res,200,found);
+}
 if(req.method==='GET'&&u.pathname==='/api/health')return send(res,200,{ok:true,cases:cases.length,model:process.env.GEMINI_API_KEY?'remoto-configurado':'simulacion',storage:sqliteStore?'sqlite':'json'});
-if(req.method==='GET'&&u.pathname==='/api/rooms')return send(res,200,cases.slice(-12).reverse().map(c=>({code:c.code,alias:c.alias,region:c.region||'Zona general',motivo:c.answers?.motivo||'Pre-triaje general',status:c.status,createdAt:c.createdAt,repliesCount:c.replies?.length||0,type:'caso-demo',realtime:false})));
+if(req.method==='GET'&&u.pathname==='/api/rooms'){if(!doctorRequired(req,res))return;return send(res,200,cases.slice(-12).reverse().map(c=>({code:c.code,alias:c.alias,region:c.region||'Zona general',motivo:c.answers?.motivo||'Pre-triaje general',status:c.status,createdAt:c.createdAt,repliesCount:c.replies?.length||0,type:'caso-demo',realtime:false})));}
 if(req.method==='POST'&&u.pathname==='/api/llm')return send(res,200,await summarize(await read(req)));
-if(req.method==='POST'&&u.pathname==='/api/cases'){const obj=clean(await read(req));if(!obj.region&&!obj.answers.motivo)return send(res,422,{error:'Indique la región o motivo'});const rec={id:crypto.randomUUID(),code:crypto.randomBytes(6).toString('hex').toUpperCase(),...obj,status:'enviado',createdAt:new Date().toISOString(),ackAt:null,replies:[]};cases.push(rec);await save();return send(res,201,rec);}
+if(req.method==='POST'&&u.pathname==='/api/cases'){const obj=clean(await read(req));if(!validDni(obj.dni)||!validNombre(obj.nombre))return send(res,422,{error:'DNI de 8 dígitos y nombre del paciente son obligatorios.'});if(!obj.region&&!obj.answers.motivo)return send(res,422,{error:'Indique la región o motivo'});const rec={id:crypto.randomUUID(),code:crypto.randomBytes(6).toString('hex').toUpperCase(),...obj,status:'enviado',createdAt:new Date().toISOString(),ackAt:null,replies:[]};cases.push(rec);await save();return send(res,201,rec);}
 if(req.method==='GET'&&u.pathname==='/api/cases/by-code'){const c=byCode(u.searchParams.get('code'));return c?send(res,200,c):send(res,404,{error:'Caso simulado no encontrado'});}
 if(req.method==='POST'&&u.pathname==='/api/doctor/reply-draft'){
+ if(!doctorRequired(req,res))return;
  const b=await read(req),c=byCode(b.code);if(!c)return send(res,404,{error:'Caso no encontrado'});
  return send(res,200,await caseReplyDraft(c,b));
 }
-if(req.method==='POST'&&(u.pathname==='/api/cases/ack'||u.pathname==='/api/cases/reply')){const b=await read(req),c=byCode(b.code);if(!c)return send(res,404,{error:'Código no encontrado'});
+if(req.method==='POST'&&(u.pathname==='/api/cases/ack'||u.pathname==='/api/cases/reply')){const doctor=doctorRequired(req,res);if(!doctor)return;const b=await read(req),c=byCode(b.code);if(!c)return send(res,404,{error:'Código no encontrado'});
 if(u.pathname.endsWith('/ack')){
   if(c.status!=='recibido'){c.status='recibido';c.ackAt=new Date().toISOString();}
 }else{
@@ -190,7 +240,7 @@ if(u.pathname.endsWith('/ack')){
   if(!m)return send(res,422,{error:'Escriba respuesta'});
   // Reintentos idénticos no deben crear una segunda respuesta accidental.
   if(c.replies.at(-1)?.message===m)return send(res,200,c);
-  c.replies.push({author:'Médico remoto (demo, no autenticado)',message:m,createdAt:new Date().toISOString()});
+  c.replies.push({author:doctor.nombre+' (demo)',message:m,createdAt:new Date().toISOString()});
 }
 await save();return send(res,200,c);}
 if(u.pathname.startsWith('/api/'))return send(res,404,{error:'API no encontrada'});

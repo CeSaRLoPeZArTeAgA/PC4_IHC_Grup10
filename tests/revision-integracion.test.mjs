@@ -1,3 +1,4 @@
+import {loginDoctor,patient} from './pc4-auth-helper.mjs';
 import test,{after} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -12,14 +13,15 @@ const {handler}=await import('../server.mjs');
 const server=http.createServer(handler);
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const base='http://127.0.0.1:'+server.address().port;
+const cookie=await loginDoctor(base);
 after(async()=>{await new Promise(resolve=>server.close(resolve));await fs.rm(runtime,{force:true})});
 async function post(endpoint,data){
- const r=await fetch(base+endpoint,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(data)});
+ const r=await fetch(base+endpoint,{method:'POST',headers:{cookie,'content-type':'application/json'},body:JSON.stringify(data)});
  return {status:r.status,body:await r.json()};
 }
 
 test('Catálogo ficticio cargado y bandeja distingue demostración de tiempo real',async()=>{
- const {body:rooms}=await (async()=>{const r=await fetch(base+'/api/rooms');return {body:await r.json()}})();
+ const {body:rooms}=await (async()=>{const r=await fetch(base+'/api/rooms',{headers:{cookie}});return {body:await r.json()}})();
  assert.ok(Array.isArray(rooms));
  assert.equal(rooms.length,6);
  for(const room of rooms){
@@ -31,7 +33,7 @@ test('Catálogo ficticio cargado y bandeja distingue demostración de tiempo rea
 });
 
 test('Concurrencia: 8 solicitudes persisten sin perder casos',async()=>{
- const requests=Array.from({length:8},(_,i)=>post('/api/cases',{alias:'Persona ficticia '+i,region:'Cabeza',answers:{motivo:'Molestia de prueba '+i,inicio:'Hoy',intensidad:'Leve',adicionales:'No'}}));
+ const requests=Array.from({length:8},(_,i)=>post('/api/cases',{...patient,alias:'Persona ficticia '+i,region:'Cabeza',answers:{motivo:'Molestia de prueba '+i,inicio:'Hoy',intensidad:'Leve',adicionales:'No'}}));
  const records=await Promise.all(requests);
  assert.ok(records.every(r=>r.status===201));
  const codes=records.map(r=>r.body.code);
@@ -41,7 +43,7 @@ test('Concurrencia: 8 solicitudes persisten sin perder casos',async()=>{
 });
 
 test('Acuse idempotente y reintento de respuesta sin duplicar',async()=>{
- const created=await post('/api/cases',{alias:'Paciente inventado',region:'Tórax',answers:{motivo:'Relato ficticio'}});
+ const created=await post('/api/cases',{...patient,alias:'Paciente inventado',region:'Tórax',answers:{motivo:'Relato ficticio'}});
  assert.equal(created.status,201);
  const code=created.body.code;
  const ack1=await post('/api/cases/ack',{code:'SALA-'+code});
@@ -77,7 +79,7 @@ test('Interfaz conserva mejoras previas y describe con precisión el carácter n
  const required=['frontView','backView','profileCard','roomList','replyHistory','replyHistorySection'];
  for(const id of required)assert.ok(html.includes('id="'+id+'"'),id);
  assert.match(html,/Bandeja de casos simulados/);
- assert.match(html,/No hay videollamada, chat en tiempo real ni autenticación clínica/);
+ assert.match(html,/La autenticación es solo académica, no clínica/);
  assert.match(app,/triagevoz_ultimo_caso_demo/);
  assert.match(app,/button\.disabled=true/);
  assert.match(app,/r\.interimResults=false/);

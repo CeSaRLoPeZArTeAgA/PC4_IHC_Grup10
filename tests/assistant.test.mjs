@@ -1,3 +1,4 @@
+import {patient} from './pc4-auth-helper.mjs';
 import {test,after} from 'node:test';
 import assert from 'node:assert/strict';
 import {newSession,replyTo} from '../assistant.mjs';
@@ -40,7 +41,7 @@ test('API unificada: inicia y responde desde el mismo puerto',async()=>{
  const server=http.createServer(handler);await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  const base='http://127.0.0.1:'+server.address().port;
  try{
-  let res=await fetch(base+'/api/assistant/start',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({lang:'es'})});assert.equal(res.status,200);
+  let res=await fetch(base+'/api/assistant/start',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({lang:'es',patient})});assert.equal(res.status,200);
   let s=await res.json();assert.ok(s.session);
   res=await fetch(base+'/api/assistant/reply',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({session:s.session,text:'Me duele la cabeza'})});
   s=await res.json();assert.equal(s.slots.motivo,'Me duele la cabeza');

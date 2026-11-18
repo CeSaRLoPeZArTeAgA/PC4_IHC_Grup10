@@ -81,7 +81,7 @@ async function start(){
   voiceFinish.hidden=true;
   voiceReceipt.hidden=true;disableVoiceAfterReply=false;
   voiceRegion='';paintBody();
-  try{const data=await post('/api/assistant/start',{lang:lang(),...personalityPayload()});renderResult(data);el('vuiMic').disabled=false;el('vuiSend').disabled=false;await speak(data.reply)}
+  try{const data=await post('/api/assistant/start',{lang:lang(),...personalityPayload(),patient:window.triagePatientIdentity?.()});renderResult(data);el('vuiMic').disabled=false;el('vuiSend').disabled=false;await speak(data.reply)}
   catch(e){status('Error');notice(e.message)}finally{busy=false}
 }
 async function send(value){

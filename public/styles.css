@@ -192,3 +192,36 @@ body.high .personality-head,body.high .personality-traits summary,body.high .tra
 body.high .personality-presets button{background:#252525!important;color:#fff!important;border-color:#eee!important}
 body.high .personality-presets button.active,body.high .personality-badge{background:#edb34f!important;color:#111!important;border-color:#edb34f!important}
 body.high .personality-presets button.active small{color:#111!important}
+
+/* ===== PC4: inicio, acceso sanitario, identificación y estados del historial ===== */
+#welcome .entry-actions button,#welcome #entryReview{
+  background:#fff!important;color:#0c4155!important;border:1.5px solid #9dbfca!important;
+  transition:background-color .18s ease,color .18s ease,box-shadow .18s ease,transform .18s ease;
+}
+#welcome .entry-actions button:hover,#welcome #entryReview:hover{
+  background:#d9f0f5!important;color:#064f66!important;border-color:#087f9a!important;
+  box-shadow:0 5px 13px #0768812b;transform:translateY(-2px);
+}
+#welcome .entry-actions button:active,#welcome #entryReview:active{background:#0b7188!important;color:white!important;transform:translateY(0)}
+#welcome .entry-actions button:focus-visible,#welcome #entryReview:focus-visible{outline:3px solid #d99c16;outline-offset:3px}
+.identity-form{max-width:520px;margin:15px auto;text-align:left}
+.identity-form label{display:block;margin-bottom:16px}
+.identity-form button[type=submit]{width:100%;margin-top:8px}
+.identity-form select{display:block;width:100%;margin-top:8px;padding:12px;border:1px solid #a6bec9;border-radius:10px;font:inherit;background:#fff;color:#173444}
+.form-error{color:#b3261e;font-weight:600;min-height:1.5em}
+.review-list{display:grid;gap:13px;margin-top:20px;text-align:left}
+.review-case{padding:16px;border:1px solid #c5dee5;border-radius:13px;background:#f8fcfd}
+.review-case h2{font-size:1.08rem;margin:0 0 6px}
+.review-case p{margin:5px 0 13px}
+.review-state{width:100%;font-weight:700;min-height:46px}
+.review-state.attended{background:#176c35;color:#fff;border:1px solid #176c35}
+.review-state.attended:hover{background:#105329}
+.review-state.pending,.review-state.pending:disabled{background:#a92b2b;color:#fff;border:1px solid #a92b2b;opacity:1;cursor:default}
+.review-response{border-top:1px solid #c5dee5;padding-top:12px;margin-top:12px;white-space:pre-wrap}
+.doctor-login-info{display:flex;gap:16px;justify-content:space-between;align-items:center;padding:8px 0 16px}
+body.high .identity-form select,body.high .review-case{background:#222!important;color:#fff!important;border-color:#fff!important}
+body.high #welcome .entry-actions button,body.high #welcome #entryReview{background:#222!important;color:#fff!important;border-color:#eee!important}
+body.high #welcome .entry-actions button:hover,body.high #welcome #entryReview:hover{background:#444!important}
+body.high .review-state.attended{background:#176c35!important;color:#fff!important}
+body.high .review-state.pending,body.high .review-state.pending:disabled{background:#ad2929!important;color:#fff!important}
+@media(max-width:640px){.doctor-login-info{flex-direction:column;align-items:flex-start}}

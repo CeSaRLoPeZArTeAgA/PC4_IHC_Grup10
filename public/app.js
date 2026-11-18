@@ -198,7 +198,7 @@ function dictate(target){
   try{r.start()}catch{alert('No fue posible iniciar el micrófono. Usa el teclado.')}
 }
 document.querySelectorAll('[data-saytarget]').forEach(b=>b.onclick=()=>dictate($(b.dataset.saytarget)));
-$('begin').onclick=()=>{session.alias=$('alias').value.trim().slice(0,35)||'Paciente de prueba';show(1);msg('Puedes tocar o escribir dónde sientes la molestia.')};
+$('begin').onclick=()=>{const patient=window.triagePatientIdentity?.();if(!patient){alert('Primero registra tu DNI y nombre.');window.triageNavigate?.('identity');return;}session.alias=patient.nombre.slice(0,35);session.dni=patient.dni;session.nombre=patient.nombre;show(1);msg('Puedes tocar o escribir dónde sientes la molestia.')};
 $('zoneNext').onclick=()=>{
   session.region=$('region').value.trim().slice(0,90);
   if(!session.region){
@@ -290,7 +290,7 @@ $('simplify').onclick=()=>{
   $('simplify')?.classList.remove('highlight-pulse');
 };
 function details(root,entries){root.replaceChildren();for(const [key,value] of entries){let dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=key;dd.textContent=value||'Sin dato';root.append(dt,dd)}}
-function renderReview(){details($('review'),[['Paciente',session.alias],['Zona confirmada',session.region],['Molestia',session.answers.motivo],['Inicio',session.answers.inicio],['Intensidad declarada',session.answers.intensidad],['Síntomas adicionales',session.answers.adicionales],['Ritmo de respuesta',userProfile.rhythm==='pausado'?'Pausado (>10s por pregunta)':'Normal (≤10s)'],['Correcciones registradas',userProfile.errorCount]])}
+function renderReview(){details($('review'),[['Paciente',session.nombre||session.alias],['DNI',session.dni||'—'],['Zona confirmada',session.region],['Molestia',session.answers.motivo],['Inicio',session.answers.inicio],['Intensidad declarada',session.answers.intensidad],['Síntomas adicionales',session.answers.adicionales],['Ritmo de respuesta',userProfile.rhythm==='pausado'?'Pausado (>10s por pregunta)':'Normal (≤10s)'],['Correcciones registradas',userProfile.errorCount]])}
 async function api(url,options){const r=await fetch(url,options);let d=await r.json();if(!r.ok)throw Error(d.error||'No fue posible completar la acción');return d}
 const jsonPost=(url,data)=>api(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(data)});
 $('summarize').onclick=async()=>{const b=$('summarize');b.disabled=true;try{const d=await jsonPost('/api/llm',session);session.summary=d.summary;session.priority=d.priority;$('summaryText').textContent=d.summary;$('summaryMode').textContent='Procedencia: '+(d.mode==='gemini'?'LLM remoto':'simulación local')+'. '+(d.warning||d.disclaimer||'');$('result').hidden=false;msg('Ya está disponible el resumen del relato ficticio.')}catch(e){alert(e.message)}finally{b.disabled=false}};
@@ -306,7 +306,7 @@ $('send').onclick=async()=>{
   if(button.disabled)return;
   button.disabled=true;
   try{
-    sent=await jsonPost('/api/cases',session);
+    const patient=window.triagePatientIdentity?.();if(!patient)throw Error('Registra tus datos para enviar el caso.');session.dni=patient.dni;session.nombre=patient.nombre;session.alias=patient.nombre.slice(0,35);sent=await jsonPost('/api/cases',session);
     localStorage.setItem('triagevoz_ultimo_caso_demo',sent.code);
     localStorage.removeItem('triagevoz_borrador_ficticio');
     $('code').textContent='SALA-'+sent.code;
@@ -321,7 +321,7 @@ $('send').onclick=async()=>{
 };
 async function refresh(){if(!sent)return;try{sent=await api('/api/cases/by-code?code='+encodeURIComponent(sent.code));$('receipt').textContent=sent.status==='recibido'?'🟢 Estado verificado: El médico remoto se ha unido a la sala y confirmó la recepción.':'🟡 Estado: Sala enviada, pendiente de acuse del médico remoto.';$('doctorResponse').replaceChildren();for(const r of sent.replies){const p=document.createElement('p');p.className='confirm';p.textContent=r.author+': '+r.message;$('doctorResponse').append(p)}}catch(e){$('receipt').textContent='No es posible comprobar recepción: '+e.message}}
 $('refresh').onclick=refresh;$('restart').onclick=()=>{localStorage.removeItem('triagevoz_ultimo_caso_demo');session={alias:'Paciente de prueba',region:'',answers:{motivo:'',inicio:'',intensidad:'',adicionales:''},summary:'',priority:''};sent=null;$('region').value='';$('doctorResponse').replaceChildren();$('result').hidden=true;show(0)};
-let doctorCase=null;function docRender(c){if(doctorCase&&doctorCase.code!==c.code)$('message').value='';doctorCase=c;window.currentDoctorCase=c;$('caseView').hidden=false;$('caseTitle').textContent='Caso SALA-'+c.code+' · '+c.alias;details($('caseDetails'),[['Zona',c.region],['Relato',c.answers.motivo],['Inicio',c.answers.inicio],['Intensidad',c.answers.intensidad],['Adicionales',c.answers.adicionales],['Resumen generado',c.summary]]);$('caseState').textContent='Estado confirmado por servidor: '+c.status;$('ack').disabled=c.status==='recibido';$('replyState').textContent='Respuestas registradas: '+c.replies.length;
+let doctorCase=null;function docRender(c){if(doctorCase&&doctorCase.code!==c.code)$('message').value='';doctorCase=c;window.currentDoctorCase=c;$('caseView').hidden=false;$('caseTitle').textContent='Caso SALA-'+c.code+' · '+c.alias;details($('caseDetails'),[['Paciente',c.nombre||c.alias],['DNI',c.dni||'Caso antiguo sin DNI'],['Fecha',new Date(c.createdAt).toLocaleString('es-PE')],['Zona',c.region],['Relato',c.answers.motivo],['Inicio',c.answers.inicio],['Intensidad',c.answers.intensidad],['Adicionales',c.answers.adicionales],['Resumen generado',c.summary]]);$('caseState').textContent='Estado confirmado por servidor: '+c.status;$('ack').disabled=c.status==='recibido';$('replyState').textContent='Respuestas registradas: '+c.replies.length;
 const history=$('replyHistory');
 history.replaceChildren();
 for(const response of c.replies){
@@ -416,24 +416,15 @@ $('replyConfirmYes').onclick=async()=>{
  }catch(e){$('doctorErr').textContent=e.message}
  finally{button.disabled=false}
 };
-// Recuperación del último caso de prueba tras recargar el navegador.
-try{
- const previous=localStorage.getItem('triagevoz_ultimo_caso_demo');
- if(previous)api('/api/cases/by-code?code='+encodeURIComponent(previous)).then(c=>{
-   if(sent)return;
-   sent=c;
-   $('code').textContent='SALA-'+c.code;
-   $('delivery').textContent='Caso ficticio recuperado del servidor local.';
-   show(5);
-   refresh();
- }).catch(()=>localStorage.removeItem('triagevoz_ultimo_caso_demo'));
-}catch{}
+// PC4: no recuperar automáticamente casos de un paciente anterior al recargar.
+// El historial se consulta expresamente desde Revisión de diagnóstico introduciendo su DNI.
 if('serviceWorker'in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{})}
 // El motor conversacional único puede completar el formulario PC2 sin abrir otra página.
 window.triageVozApply=(slots,selectedRegion='')=>{
   if(!slots||typeof slots!=='object')return;
   for(const key of keys)if(typeof slots[key]==='string')session.answers[key]=slots[key].slice(0,700);
-  session.alias=$('alias').value.trim().slice(0,35)||'Paciente de prueba';
+  const patient=window.triagePatientIdentity?.();
+  if(patient){session.alias=patient.nombre.slice(0,35);session.dni=patient.dni;session.nombre=patient.nombre;}
   const motivo=(slots.motivo||'').toLowerCase();
   let zone='';
   if(/cabeza|uma/.test(motivo))zone='Cabeza';

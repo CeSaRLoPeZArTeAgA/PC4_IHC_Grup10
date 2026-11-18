@@ -68,16 +68,51 @@ export async function createSqliteStore({dbFile,legacyCasesFile,legacyProfilesFi
         created_at TEXT NOT NULL
       );
       CREATE INDEX IF NOT EXISTS idx_events_case ON case_events(case_code,id);
+      CREATE TABLE IF NOT EXISTS Personal_Salud (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT NOT NULL UNIQUE,
+        clave_hash TEXT NOT NULL,
+        salt TEXT NOT NULL,
+        activo INTEGER NOT NULL DEFAULT 1,
+        creado_en TEXT NOT NULL
+      );
     `);
+
+    // Migración aditiva, respeta todos los registros PC2/PC3 existentes.
+    const cols=db.prepare('PRAGMA table_info(cases)').all().map(c=>c.name);
+    if(!cols.includes('dni'))db.exec("ALTER TABLE cases ADD COLUMN dni TEXT NOT NULL DEFAULT ''");
+    if(!cols.includes('nombre'))db.exec("ALTER TABLE cases ADD COLUMN nombre TEXT NOT NULL DEFAULT ''");
+    db.exec('CREATE INDEX IF NOT EXISTS idx_cases_dni ON cases(dni,created_at DESC)');
+
+    // SOLO DEMO ACADÉMICA: cuatro cuentas ficticias. Nunca guardar contraseñas en texto plano.
+    const staffNames=['Dra. Ana Quispe','Dr. Luis Rojas','Dra. María Huamán','Dr. Carlos Medina'];
+    if(db.prepare('SELECT COUNT(*) n FROM Personal_Salud').get().n===0){
+      const insert=db.prepare('INSERT INTO Personal_Salud(nombre,clave_hash,salt,creado_en) VALUES(?,?,?,?)');
+      for(const nombre of staffNames){
+        const salt=crypto.randomBytes(16).toString('hex');
+        const hash=crypto.scryptSync('123456',salt,64).toString('hex');
+        insert.run(nombre,hash,salt,new Date().toISOString());
+      }
+    }
+    const listDoctors=()=>db.prepare('SELECT id,nombre FROM Personal_Salud WHERE activo=1 ORDER BY id').all();
+    const verifyDoctor=(id,password)=>{
+      const doctor=db.prepare('SELECT * FROM Personal_Salud WHERE id=? AND activo=1').get(Number(id));
+      if(!doctor||typeof password!=='string'||password.length>128)return null;
+      const candidate=crypto.scryptSync(password,doctor.salt,64);
+      const stored=Buffer.from(doctor.clave_hash,'hex');
+      return stored.length===candidate.length&&crypto.timingSafeEqual(candidate,stored)?{id:doctor.id,nombre:doctor.nombre}:null;
+    };
 
     const oldStatus=db.prepare('SELECT status FROM cases WHERE code=?');
     const upsertCase=db.prepare(`INSERT INTO cases
-      (code,id,alias,region,motivo,inicio,intensidad,adicionales,summary,priority,status,created_at,ack_at)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+      (code,id,alias,region,motivo,inicio,intensidad,adicionales,summary,priority,status,created_at,ack_at,dni,nombre)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
       ON CONFLICT(code) DO UPDATE SET
       alias=excluded.alias,region=excluded.region,motivo=excluded.motivo,
       inicio=excluded.inicio,intensidad=excluded.intensidad,adicionales=excluded.adicionales,
-      summary=excluded.summary,priority=excluded.priority,status=excluded.status,ack_at=excluded.ack_at`);
+      summary=excluded.summary,priority=excluded.priority,status=excluded.status,ack_at=excluded.ack_at,
+      dni=CASE WHEN excluded.dni<>'' THEN excluded.dni ELSE cases.dni END,
+      nombre=CASE WHEN excluded.nombre<>'' THEN excluded.nombre ELSE cases.nombre END`);
     const getReply=db.prepare('SELECT 1 FROM case_replies WHERE case_code=? AND sequence=?');
     const addReply=db.prepare('INSERT OR IGNORE INTO case_replies(case_code,sequence,author,message,created_at) VALUES(?,?,?,?,?)');
     const addEvent=db.prepare('INSERT INTO case_events(case_code,event_type,created_at) VALUES(?,?,?)');
@@ -95,7 +130,7 @@ export async function createSqliteStore({dbFile,legacyCasesFile,legacyProfilesFi
       const previous=oldStatus.get(code);
       const a=c.answers||{};
       const created=text(c.createdAt)||now();
-      upsertCase.run(code,text(c.id)||crypto.randomUUID(),text(c.alias),text(c.region),text(a.motivo),text(a.inicio),text(a.intensidad),text(a.adicionales),text(c.summary),text(c.priority),status,created,c.ackAt||null);
+      upsertCase.run(code,text(c.id)||crypto.randomUUID(),text(c.alias),text(c.region),text(a.motivo),text(a.inicio),text(a.intensidad),text(a.adicionales),text(c.summary),text(c.priority),status,created,c.ackAt||null,text(c.dni),text(c.nombre));
       if(!previous)addEvent.run(code,'creado',created);
       else if(previous.status!==status)addEvent.run(code,status==='recibido'?'acuse':'cambio_estado',now());
       for(const [i,r] of (Array.isArray(c.replies)?c.replies:[]).entries()) {
@@ -115,11 +150,18 @@ export async function createSqliteStore({dbFile,legacyCasesFile,legacyProfilesFi
       catch(e){db.exec('ROLLBACK');throw e;}
     }
     const readCases=()=>db.prepare('SELECT * FROM cases ORDER BY created_at ASC, rowid ASC').all().map(c=>({
-      id:c.id,code:c.code,alias:c.alias,region:c.region,
+      id:c.id,code:c.code,alias:c.alias,dni:c.dni,nombre:c.nombre,region:c.region,
       answers:{motivo:c.motivo,inicio:c.inicio,intensidad:c.intensidad,adicionales:c.adicionales},
       summary:c.summary,priority:c.priority,status:c.status,createdAt:c.created_at,ackAt:c.ack_at,
       replies:db.prepare('SELECT author,message,created_at FROM case_replies WHERE case_code=? ORDER BY sequence').all(c.code).map(r=>({author:r.author,message:r.message,createdAt:r.created_at}))
     }));
+    const listCasesByDni=dni=>db.prepare(`SELECT code, dni, nombre, region, motivo, status, created_at,
+      (SELECT COUNT(*) FROM case_replies r WHERE r.case_code=cases.code) AS replies_count
+      FROM cases WHERE dni=? ORDER BY created_at DESC`).all(dni).map(c=>({
+        code:c.code,dni:c.dni,nombre:c.nombre,region:c.region,motivo:c.motivo,
+        status:c.status,createdAt:c.created_at,repliesCount:c.replies_count,
+        attended:c.replies_count>0
+      }));
     const readProfiles=()=>Object.fromEntries(db.prepare('SELECT id,payload_json FROM profiles').all().map(p=>[p.id,JSON.parse(p.payload_json)]));
     const saveCases=cases=>transaction(()=>{for(const c of cases)caseWrite(c);});
     const saveProfile=(id,profile)=>transaction(()=>profileWrite(id,profile));
@@ -139,6 +181,6 @@ export async function createSqliteStore({dbFile,legacyCasesFile,legacyProfilesFi
         db.prepare('INSERT INTO schema_meta(key,value) VALUES(?,?)').run('migration_v1_complete',now());
       });
     }
-    return {readCases,readProfiles,saveCases,saveProfile,stats,close:()=>db.close(),dbFile};
+    return {readCases,readProfiles,listCasesByDni,listDoctors,verifyDoctor,saveCases,saveProfile,stats,close:()=>db.close(),dbFile};
   }catch(e){db.close();throw e;}
 }

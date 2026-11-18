@@ -28,9 +28,9 @@ function applyPersonality(s,persona,personality){
 const usted=s=>s.personality.formalidad>=7;
 const question=(s,i)=>s.lang==='qu'?questionsQu[i]:localQuestion(s.personality,i);
 
-export function newSession(lang='es',persona,personality){
+export function newSession(lang='es',persona,personality,patient=null){
   const id=crypto.randomUUID();
-  const s={id,lang:lang==='qu'?'qu':'es',persona:presetKey(persona),personality:null,slots:{},index:0,mode:'rutina',history:[],ended:false,confirmed:false,caseCode:null};
+  const s={id,lang:lang==='qu'?'qu':'es',persona:presetKey(persona),personality:null,slots:{},index:0,mode:'rutina',history:[],ended:false,confirmed:false,caseCode:null,patient:patient&&typeof patient==='object'?{dni:String(patient.dni||''),nombre:String(patient.nombre||'')}:null};
   s.personality=normalizePersonality(null,s.persona);
   applyPersonality(s,persona,personality);
   sessions.set(id,s);
@@ -47,7 +47,7 @@ export async function replyTo({session,text,lang,persona,personality,provider='g
   const t=clean(original);
   s.history.push({role:'patient',text:original});
   if(patterns.alarm.test(t)&&!/no tengo|sin dolor|niego|no presento/.test(t)){s.ended=true;s.mode='alarma';return end(s,warning[s.lang],'seguridad')}
-  if(/^(reiniciar|empezar de nuevo|borrar conversacion)$/i.test(t))return newSession(s.lang,s.persona,s.personality);
+  if(/^(reiniciar|empezar de nuevo|borrar conversacion)$/i.test(t))return newSession(s.lang,s.persona,s.personality,s.patient);
   if(s.ended)return end(s,warning[s.lang],'seguridad');
   if(patterns.explain.test(t)){s.mode='comprension';return end(s,s.lang==='qu'?'Allinmi. Aswan sut’ita tapusayki: '+questionsQu[s.index]:(usted(s)?'Le explicaré con palabras sencillas. Intensidad significa qué tan fuerte siente la molestia. ':'Te explicaré con palabras sencillas. Intensidad significa qué tan fuerte sientes la molestia. ')+(question(s,s.index)||'¿La información está correcta?'),'intent_contextual')}
   if(patterns.distress.test(t)){s.mode='contencion';return end(s,s.lang==='qu'?'Ama manchakuychu. Samaykuspa kutichiy. '+questionsQu[s.index]:(usted(s)?'Entiendo su preocupación. Responda a su ritmo. ':'Entiendo tu preocupación. Responde a tu ritmo. ')+(question(s,s.index)||''),'intent_contextual')}

@@ -13,7 +13,7 @@ test('Solo la bienvenida habilita el acceso al rol médico y las pantallas no se
  assert.doesNotMatch(html,/Personal de salud \(demo\)/);
  assert.match(css,/header nav\{display:none!important\}/);
  assert.match(nav,/get\('doctor'\)\.hidden=next!=='doctor'/);
- assert.match(nav,/get\('entryDoctor'\)\.onclick=\(\)=>render\('doctor'\)/);
+ assert.match(nav,/get\('entryDoctor'\)\.onclick=openDoctorLogin/);
  assert.doesNotMatch(nav,/get\('doctorTab'\)\.click\(\)/);
  assert.doesNotMatch(app,/\$\('doctorTab'\)\.onclick=/);
 });

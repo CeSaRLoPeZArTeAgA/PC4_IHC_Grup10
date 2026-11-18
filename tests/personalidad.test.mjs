@@ -1,3 +1,4 @@
+import {loginDoctor,patient} from './pc4-auth-helper.mjs';
 // Tarea 1 (Lec-LAB 11) integrada en PC3: personalidad graduable de seis ejes.
 import {test,after} from 'node:test';
 import assert from 'node:assert/strict';
@@ -90,9 +91,11 @@ test('Asistente de voz: la sesión aplica la personalidad elegida en cada turno'
 test('API: borrador de respuesta con personalidad, sin registrar nada',async()=>{
   const server=http.createServer(handler);await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
   const base='http://127.0.0.1:'+server.address().port;
-  const post=(route,body)=>fetch(base+route,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+  let cookie='';
+  const post=(route,body)=>fetch(base+route,{method:'POST',headers:{'content-type':'application/json',...(cookie?{cookie}:{})},body:JSON.stringify(body)});
   try{
-    const created=await (await post('/api/cases',{alias:'Prueba',region:'Tórax',answers:{motivo:'Dolor al respirar hondo'}})).json();
+    const created=await (await post('/api/cases',{...patient,alias:'Prueba',region:'Tórax',answers:{motivo:'Dolor al respirar hondo'}})).json();
+    cookie=await loginDoctor(base);
     let r=await post('/api/doctor/reply-draft',{code:created.code,preset:'tecnico'});
     assert.equal(r.status,200);let d=await r.json();
     assert.equal(d.preset,'tecnico');assert.equal(d.generated,false);
@@ -111,7 +114,7 @@ test('API: borrador de respuesta con personalidad, sin registrar nada',async()=>
     p=(await (await fetch(base+'/api/profiles?id='+id)).json()).profile;
     assert.equal(p.persona,'acompanante');assert.deepEqual(p.personality,normalizePersonality(null,'acompanante'));
     // El asistente recibe la personalidad desde el navegador.
-    const s=await (await post('/api/assistant/start',{lang:'es',persona:'profesional'})).json();
+    const s=await (await post('/api/assistant/start',{lang:'es',persona:'profesional',patient})).json();
     assert.equal(s.persona,'profesional');assert.match(s.reply,/Te haré preguntas breves/);
   }finally{await new Promise(ok=>server.close(ok))}
 });
