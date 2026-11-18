@@ -13,3 +13,38 @@ data/*.sqlite
 data/*.sqlite-*
 server.mjs.pre-sqlite.bak
 server.mjs.sqlite.tmp
+
+# =====================================
+# EXCLUIR ARCHIVOS DE VIDEO
+# =====================================
+
+# Formatos de video comunes
+*.[mM][pP]4
+*.[mM]4[vV]
+*.[mM][oO][vV]
+*.[aA][vV][iI]
+*.[mM][kK][vV]
+*.[wW][eE][bB][mM]
+*.[wW][mM][vV]
+*.[fF][lL][vV]
+
+# Otros formatos de video
+*.mpg
+*.mpeg
+*.m2v
+*.3gp
+*.3g2
+*.ts
+*.mts
+*.m2ts
+*.vob
+*.ogv
+*.asf
+*.rm
+*.rmvb
+*.divx
+*.f4v
+*.mxf
+*.hevc
+*.h264
+*.h265
