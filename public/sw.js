@@ -1,4 +1,4 @@
-const cache='triagevoz-pc4-v1';
+const cache='triagevoz-pc4-reset-navegacion-v1';
 const assets=['/','/index.html','/app.js','/vui.js','/navigation.js','/personality.js','/personality-ui.js','/styles.css','/doctor-avatar.jpg','/icon.svg','/manifest.webmanifest'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(cache).then(store=>store.addAll(assets)));

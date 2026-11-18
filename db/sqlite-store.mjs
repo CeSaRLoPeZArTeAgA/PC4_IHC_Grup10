@@ -68,6 +68,18 @@ export async function createSqliteStore({dbFile,legacyCasesFile,legacyProfilesFi
         created_at TEXT NOT NULL
       );
       CREATE INDEX IF NOT EXISTS idx_events_case ON case_events(case_code,id);
+      CREATE TABLE IF NOT EXISTS case_identity_audit (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        case_code TEXT NOT NULL REFERENCES cases(code) ON DELETE CASCADE,
+        doctor_id INTEGER NOT NULL,
+        doctor_name TEXT NOT NULL,
+        old_dni TEXT NOT NULL DEFAULT '',
+        new_dni TEXT NOT NULL,
+        old_nombre TEXT NOT NULL DEFAULT '',
+        new_nombre TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_case_identity_audit ON case_identity_audit(case_code,id);
       CREATE TABLE IF NOT EXISTS Personal_Salud (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nombre TEXT NOT NULL UNIQUE,
@@ -162,6 +174,9 @@ export async function createSqliteStore({dbFile,legacyCasesFile,legacyProfilesFi
         status:c.status,createdAt:c.created_at,repliesCount:c.replies_count,
         attended:c.replies_count>0
       }));
+    // La identidad del paciente solo se registra en el alta del triaje.
+    // La carga de identidades ficticias históricas se realiza por script administrativo
+    // con el servidor detenido; el personal de salud no tiene acceso a esa operación.
     const readProfiles=()=>Object.fromEntries(db.prepare('SELECT id,payload_json FROM profiles').all().map(p=>[p.id,JSON.parse(p.payload_json)]));
     const saveCases=cases=>transaction(()=>{for(const c of cases)caseWrite(c);});
     const saveProfile=(id,profile)=>transaction(()=>profileWrite(id,profile));

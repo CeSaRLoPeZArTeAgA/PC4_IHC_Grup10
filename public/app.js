@@ -311,17 +311,38 @@ $('send').onclick=async()=>{
     localStorage.removeItem('triagevoz_borrador_ficticio');
     $('code').textContent='SALA-'+sent.code;
     $('delivery').textContent='Caso ficticio almacenado en el servidor local.';
-    $('receipt').textContent='Estado: enviado. Pendiente de confirmación del rol médico simulado.';
+    $('receipt').textContent='Triaje registrado correctamente. En espera de respuesta del personal de salud.';
     $('result').hidden=true;show(5);
   }catch(e){
     $('delivery').textContent='Pendiente de envío: '+e.message;
     localStorage.setItem('triagevoz_borrador_ficticio',JSON.stringify(session));
-    alert('No fue posible enviar. Se conserva el borrador ficticio en este navegador; no se marcará como recibido.');
+    alert('No fue posible guardar el triaje. Se conserva el borrador ficticio en este navegador.');
   }finally{button.disabled=false}
 };
-async function refresh(){if(!sent)return;try{sent=await api('/api/cases/by-code?code='+encodeURIComponent(sent.code));$('receipt').textContent=sent.status==='recibido'?'🟢 Estado verificado: El médico remoto se ha unido a la sala y confirmó la recepción.':'🟡 Estado: Sala enviada, pendiente de acuse del médico remoto.';$('doctorResponse').replaceChildren();for(const r of sent.replies){const p=document.createElement('p');p.className='confirm';p.textContent=r.author+': '+r.message;$('doctorResponse').append(p)}}catch(e){$('receipt').textContent='No es posible comprobar recepción: '+e.message}}
+async function refresh(){if(!sent)return;try{sent=await api('/api/cases/by-code?code='+encodeURIComponent(sent.code));$('receipt').textContent=sent.replies?.length?'🟢 Atendido: hay una respuesta del personal de salud.':'🟡 Triaje registrado: en espera de respuesta del personal de salud.';$('doctorResponse').replaceChildren();for(const r of sent.replies||[]){const p=document.createElement('p');p.className='confirm';p.textContent=r.author+': '+r.message;$('doctorResponse').append(p)}}catch(e){$('receipt').textContent='No es posible consultar el estado del caso: '+e.message}}
 $('refresh').onclick=refresh;$('restart').onclick=()=>{localStorage.removeItem('triagevoz_ultimo_caso_demo');session={alias:'Paciente de prueba',region:'',answers:{motivo:'',inicio:'',intensidad:'',adicionales:''},summary:'',priority:''};sent=null;$('region').value='';$('doctorResponse').replaceChildren();$('result').hidden=true;show(0)};
-let doctorCase=null;function docRender(c){if(doctorCase&&doctorCase.code!==c.code)$('message').value='';doctorCase=c;window.currentDoctorCase=c;$('caseView').hidden=false;$('caseTitle').textContent='Caso SALA-'+c.code+' · '+c.alias;details($('caseDetails'),[['Paciente',c.nombre||c.alias],['DNI',c.dni||'Caso antiguo sin DNI'],['Fecha',new Date(c.createdAt).toLocaleString('es-PE')],['Zona',c.region],['Relato',c.answers.motivo],['Inicio',c.answers.inicio],['Intensidad',c.answers.intensidad],['Adicionales',c.answers.adicionales],['Resumen generado',c.summary]]);$('caseState').textContent='Estado confirmado por servidor: '+c.status;$('ack').disabled=c.status==='recibido';$('replyState').textContent='Respuestas registradas: '+c.replies.length;
+let doctorCase=null;
+function docRender(c){
+ if(doctorCase&&doctorCase.code!==c.code)$('message').value='';
+ doctorCase=c;
+ window.currentDoctorCase=c;
+ $('caseView').hidden=false;
+ $('caseTitle').textContent='Caso SALA-'+c.code+' · '+(c.nombre||c.alias);
+ const answers=c.answers||{};
+ // La identificación se muestra una sola vez, dentro del resumen del triaje.
+ // No existe un formulario para cambiar DNI o nombre desde Personal de Salud.
+ details($('caseDetails'),[
+  ['Nombre completo',c.nombre||c.alias],
+  ['DNI',c.dni||'No registrado (caso histórico)'],
+  ['Fecha del triaje',new Date(c.createdAt).toLocaleString('es-PE')],
+  ['Zona',c.region],
+  ['Relato',answers.motivo],
+  ['Inicio',answers.inicio],
+  ['Intensidad',answers.intensidad],
+  ['Adicionales',answers.adicionales],
+  ['Resumen generado',c.summary]
+ ]);
+ $('replyState').textContent=c.replies?.length?'Respuestas registradas: '+c.replies.length:'Pendiente de respuesta profesional.';
 const history=$('replyHistory');
 history.replaceChildren();
 for(const response of c.replies){
@@ -358,8 +379,9 @@ async function loadRooms(){
    alias.className='room-alias';
    alias.textContent=r.alias||'Paciente de demostración';
    const badge=document.createElement('span');
-   badge.className='room-badge '+(r.status==='recibido'?'recibido':'enviado');
-   badge.textContent=r.status==='recibido'?'Recibido (acuse registrado)':'Enviado (pendiente de acuse)';
+   const attended=Number(r.repliesCount)>0;
+   badge.className='room-badge '+(attended?'recibido':'enviado');
+   badge.textContent=attended?'Atendido':'Pendiente de respuesta';
    head.append(alias,badge);
    const details=document.createElement('div');
    details.className='room-details';
@@ -367,7 +389,10 @@ async function loadRooms(){
    const code=document.createElement('div');
    code.className='room-code';
    code.textContent='Caso SALA-'+r.code+' · '+(r.repliesCount?r.repliesCount+' respuesta(s)':'Sin respuesta');
-   card.append(head,details,code);
+   const patientDni=document.createElement('div');
+   patientDni.className='room-dni'+(r.dni?'':' room-dni-missing');
+   patientDni.textContent=r.dni?'DNI: '+r.dni+' · '+(r.nombre||r.alias):'Sin DNI · registro histórico pendiente';
+   card.append(head,details,patientDni,code);
    card.onclick=()=>{
     $('lookupCode').value=r.code;
     $('lookup').click();
@@ -384,7 +409,7 @@ async function loadRooms(){
 }
 if($('refreshRooms'))$('refreshRooms').onclick=loadRooms;
 $('lookup').onclick=async()=>{try{const c=await api('/api/cases/by-code?code='+encodeURIComponent($('lookupCode').value));$('doctorErr').textContent='';docRender(c)}catch(e){$('caseView').hidden=true;$('doctorErr').textContent=e.message}};
-$('ack').onclick=async()=>{if(!doctorCase)return;try{docRender(await jsonPost('/api/cases/ack',{code:doctorCase.code}));loadRooms();}catch(e){$('doctorErr').textContent=e.message}};
+
 $('reply').onclick=async()=>{
  if(!doctorCase)return;
  const response=$('message').value.trim();

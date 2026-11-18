@@ -222,8 +222,14 @@ if(req.method==='GET'&&u.pathname==='/api/cases/by-dni'){
  const found=sqliteStore?sqliteStore.listCasesByDni(dni):cases.filter(c=>c.dni===dni).slice().reverse().map(c=>({code:c.code,dni:c.dni,nombre:c.nombre,region:c.region,motivo:c.answers?.motivo||'',status:c.status,createdAt:c.createdAt,repliesCount:c.replies?.length||0,attended:!!c.replies?.length}));
  return send(res,200,found);
 }
+// La identidad pertenece al registro del paciente: nunca puede editarla el rol médico.
+// Se mantiene esta respuesta explícita por compatibilidad con clientes antiguos.
+if(req.method==='POST'&&u.pathname==='/api/doctor/cases/identity'){
+ if(!doctorRequired(req,res))return;
+ return send(res,403,{error:'El personal de salud no tiene permisos para modificar DNI o nombre del paciente.'});
+}
 if(req.method==='GET'&&u.pathname==='/api/health')return send(res,200,{ok:true,cases:cases.length,model:process.env.GEMINI_API_KEY?'remoto-configurado':'simulacion',storage:sqliteStore?'sqlite':'json'});
-if(req.method==='GET'&&u.pathname==='/api/rooms'){if(!doctorRequired(req,res))return;return send(res,200,cases.slice(-12).reverse().map(c=>({code:c.code,alias:c.alias,region:c.region||'Zona general',motivo:c.answers?.motivo||'Pre-triaje general',status:c.status,createdAt:c.createdAt,repliesCount:c.replies?.length||0,type:'caso-demo',realtime:false})));}
+if(req.method==='GET'&&u.pathname==='/api/rooms'){if(!doctorRequired(req,res))return;return send(res,200,cases.slice(-100).reverse().map(c=>({code:c.code,alias:c.alias,dni:c.dni||'',nombre:c.nombre||'',region:c.region||'Zona general',motivo:c.answers?.motivo||'Pre-triaje general',status:c.status,createdAt:c.createdAt,repliesCount:c.replies?.length||0,type:'caso-demo',realtime:false})));}
 if(req.method==='POST'&&u.pathname==='/api/llm')return send(res,200,await summarize(await read(req)));
 if(req.method==='POST'&&u.pathname==='/api/cases'){const obj=clean(await read(req));if(!validDni(obj.dni)||!validNombre(obj.nombre))return send(res,422,{error:'DNI de 8 dígitos y nombre del paciente son obligatorios.'});if(!obj.region&&!obj.answers.motivo)return send(res,422,{error:'Indique la región o motivo'});const rec={id:crypto.randomUUID(),code:crypto.randomBytes(6).toString('hex').toUpperCase(),...obj,status:'enviado',createdAt:new Date().toISOString(),ackAt:null,replies:[]};cases.push(rec);await save();return send(res,201,rec);}
 if(req.method==='GET'&&u.pathname==='/api/cases/by-code'){const c=byCode(u.searchParams.get('code'));return c?send(res,200,c):send(res,404,{error:'Caso simulado no encontrado'});}

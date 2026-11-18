@@ -1,0 +1,21 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+const root=path.resolve(import.meta.dirname,'..');
+test('PC4: DNI y nombre en el resumen, sin ficha separada ni botón de recepción',async()=>{
+ const html=await fs.readFile(path.join(root,'public/index.html'),'utf8');
+ const app=await fs.readFile(path.join(root,'public/app.js'),'utf8');
+ assert.match(html,/id="caseDetails"/);
+ assert.match(html,/Resumen del triaje/);
+ assert.doesNotMatch(html,/id="caseIdentityEditor"/);
+ assert.doesNotMatch(html,/id="ack"/);
+ assert.doesNotMatch(html,/Confirmar recepción/);
+ assert.match(app,/\['Nombre completo',c\.nombre\|\|c\.alias\]/);
+ assert.match(app,/\['DNI',c\.dni\|\|/);
+ assert.match(app,/\['Fecha del triaje',/);
+ assert.doesNotMatch(app,/\$\('ack'\)/);
+ assert.doesNotMatch(app,/\/api\/cases\/ack/);
+ assert.doesNotMatch(app,/doctor\/cases\/identity/);
+ assert.match(app,/badge.textContent=attended\?'Atendido'/);
+});

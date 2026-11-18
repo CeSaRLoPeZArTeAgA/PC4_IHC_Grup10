@@ -1,0 +1,28 @@
+import test,{after} from 'node:test';
+import assert from 'node:assert/strict';
+import http from 'node:http';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import {loginDoctor,patient} from './pc4-auth-helper.mjs';
+const file=path.join(os.tmpdir(),'triagevoz-no-ack-'+crypto.randomUUID()+'.json');
+process.env.STORAGE_FILE=file;
+const {handler}=await import('../server.mjs');
+const server=http.createServer(handler);
+await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+const base='http://127.0.0.1:'+server.address().port;
+after(async()=>{await new Promise(resolve=>server.close(resolve));await fs.rm(file,{force:true})});
+test('PC4: el caso queda registrado y se responde sin confirmación manual de recepción',async()=>{
+ const created=await fetch(base+'/api/cases',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({...patient,alias:'Paciente simulado',region:'Cabeza',answers:{motivo:'Molestia ficticia',inicio:'Ayer',intensidad:'Leve',adicionales:'No'}})});
+ assert.equal(created.status,201);
+ const c=await created.json();
+ const initial=await (await fetch(base+'/api/cases/by-dni?dni='+encodeURIComponent(c.dni))).json();
+ assert.ok(initial.some(item=>item.code===c.code));
+ assert.equal(initial.find(item=>item.code===c.code).attended,false);
+ const cookie=await loginDoctor(base);
+ const reply=await fetch(base+'/api/cases/reply',{method:'POST',headers:{cookie,'content-type':'application/json'},body:JSON.stringify({code:c.code,message:'Respuesta académica de demostración.'})});
+ assert.equal(reply.status,200,'el médico responde sin tener que confirmar recepción');
+ const updated=await (await fetch(base+'/api/cases/by-dni?dni='+encodeURIComponent(c.dni))).json();
+ assert.equal(updated.find(item=>item.code===c.code).attended,true);
+});

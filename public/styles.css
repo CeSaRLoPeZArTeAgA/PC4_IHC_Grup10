@@ -225,3 +225,11 @@ body.high #welcome .entry-actions button:hover,body.high #welcome #entryReview:h
 body.high .review-state.attended{background:#176c35!important;color:#fff!important}
 body.high .review-state.pending,body.high .review-state.pending:disabled{background:#ad2929!important;color:#fff!important}
 @media(max-width:640px){.doctor-login-info{flex-direction:column;align-items:flex-start}}
+
+/* PC4: DNI y nombre figuran exclusivamente en el resumen del triaje. */
+.case-summary-heading{font-size:1.08rem;color:#0b4c5c;margin:16px 0 8px}
+.room-dni{color:#116645;font-size:.88rem;font-weight:700}
+.room-dni-missing{color:#9b3f1d}
+body.high .case-summary-heading{color:#fff}
+body.high .room-dni{color:#a7f3d0}
+body.high .room-dni-missing{color:#ffbf91}

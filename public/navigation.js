@@ -1,4 +1,4 @@
-// Navegación PC3: bienvenida > opciones > voz/formulario > revisión; personal de salud por separado.
+// Navegación PC4: cada ingreso a revisión reinicia la consulta y cada acceso médico exige login.
 import {mountPersonalityPanel} from './personality-ui.js';
 const get=id=>document.getElementById(id);
 const main=document.querySelector('main');
@@ -9,7 +9,7 @@ identity.innerHTML=`<p class="eyebrow">IDENTIFICACIÓN DEL PACIENTE</p><h1>Antes
 const choice=document.createElement('section');choice.id='patientOptions';choice.className='entry-page';
 choice.innerHTML=`<p class="eyebrow">PASO 1 · PREFERENCIAS</p><h1>¿Cómo deseas comunicarte?</h1><p>Elige el idioma y las ayudas que necesites.</p><div class="choice-settings"><label>Idioma <select id="choiceLanguage"><option value="es">Español</option><option value="qu">Quechua sureño (experimental)</option></select></label><label><input type="checkbox" id="choiceContrast"> Alto contraste</label><label><input type="checkbox" id="choiceLarge"> Texto grande</label><label><input type="checkbox" id="choiceSpeak"> Lectura por voz</label></div><div class="mode-choices"><button id="chooseVoice" type="button"><span class="mode-icon">🎙</span><strong>Asistente de voz</strong><small>Habla y observa la zona del cuerpo en una silueta</small></button><button id="chooseForm" type="button"><span class="mode-icon">👤</span><strong>Formulario táctil</strong><small>Selecciona zonas y responde paso a paso</small></button></div><p class="helper">El modo quechua requiere pruebas de voz; siempre puedes responder por escrito.</p>`;
 const doctorLogin=document.createElement('section');doctorLogin.id='doctorLogin';doctorLogin.className='entry-page';
-doctorLogin.innerHTML=`<p class="eyebrow">ACCESO DEL PERSONAL DE SALUD</p><h1>Iniciar sesión</h1><p>Selecciona uno de los cuatro profesionales de demostración.</p><form id="doctorLoginForm" class="identity-form"><label for="doctorSelect">Profesional de salud<select id="doctorSelect" required><option value="">Cargando profesionales…</option></select></label><label for="doctorPassword">Contraseña<input type="password" id="doctorPassword" required autocomplete="current-password" placeholder="Contraseña"></label><p id="doctorLoginError" class="form-error" role="alert"></p><button type="submit" class="primary">Ingresar a bandeja de casos</button></form><p class="entry-footnote">Cuentas ficticias de demostración; no es un sistema clínico real.</p>`;
+doctorLogin.innerHTML=`<p class="eyebrow">ACCESO DEL PERSONAL DE SALUD</p><h1>Iniciar sesión</h1><p>Selecciona uno de los cuatro profesionales de demostración.</p><form id="doctorLoginForm" class="identity-form" autocomplete="off"><label for="doctorSelect">Profesional de salud<select id="doctorSelect" required><option value="">Cargando profesionales…</option></select></label><label for="doctorPassword">Contraseña<input type="password" id="doctorPassword" required autocomplete="off" placeholder="Contraseña"></label><p id="doctorLoginError" class="form-error" role="alert"></p><button type="submit" class="primary">Ingresar a bandeja de casos</button></form><p class="entry-footnote">Cuentas ficticias de demostración; no es un sistema clínico real.</p>`;
 const review=document.createElement('section');review.id='caseReview';review.className='entry-page';
 review.innerHTML=`<p class="eyebrow">HISTORIAL DE PRE-TRIAJE</p><h1>Revisión de diagnóstico</h1><p>Ingresa el DNI usado al registrar tus triajes para consultar sus estados y respuestas.</p><form id="reviewForm" class="identity-form"><label for="reviewDni">DNI (8 dígitos)<input id="reviewDni" maxlength="8" inputmode="numeric" pattern="[0-9]{8}" placeholder="DNI ficticio" autocomplete="off" required></label><button type="submit" id="reviewSearch" class="primary">Consultar triajes</button></form><p id="reviewStatus" role="status" aria-live="polite"></p><div id="reviewList" class="review-list" aria-live="polite"></div><p class="entry-footnote">Demostración académica: el DNI no constituye autenticación segura. Para datos reales debe añadirse verificación de identidad.</p>`;
 main.prepend(review);main.prepend(doctorLogin);main.prepend(choice);main.prepend(identity);main.prepend(home);
@@ -19,7 +19,45 @@ get('p5').append(caseFinish);
 caseFinish.onclick=()=>{get('restart').click();render('welcome')};
 let page='welcome';
 let patientIdentity=null;
+let reviewRequestId=0;
+let reviewController=null;
+let doctorNavigationId=0;
+let doctorExitPromise=Promise.resolve();
 window.triagePatientIdentity=()=>patientIdentity?{...patientIdentity}:null;
+
+function resetReview(){
+ reviewRequestId++;
+ reviewController?.abort();
+ reviewController=null;
+ get('reviewForm').reset();
+ get('reviewDni').value='';
+ get('reviewStatus').textContent='';
+ get('reviewList').replaceChildren();
+}
+function clearDoctorView(){
+ get('doctorLoginForm').reset();
+ get('doctorSelect').replaceChildren(new Option('Selecciona un profesional',''));
+ get('doctorPassword').value='';
+ get('doctorLoginError').textContent='';
+ get('doctorLoggedName').textContent='';
+ get('caseView').hidden=true;
+ get('roomList').replaceChildren();
+ get('lookupCode').value='';
+ get('doctorErr').textContent='';
+ get('message').value='';
+ get('replyState').textContent='';
+ get('replyDraftStatus')?.replaceChildren();
+ window.currentDoctorCase=null;
+}
+function closeDoctorSession(){
+ doctorNavigationId++; // invalida un login o una carga de médicos que siga pendiente
+ clearDoctorView();
+ // Encadena la terminación para evitar que un acceso inmediato reutilice la sesión.
+ doctorExitPromise=doctorExitPromise.catch(()=>{}).then(()=>
+  fetch('/api/doctor/logout',{method:'POST',credentials:'same-origin',cache:'no-store'}).catch(()=>{})
+ );
+}
+
 function syncToChoice(){
  get('choiceLanguage').value=get('language').value;
  get('choiceContrast').checked=get('contrast').checked;
@@ -27,6 +65,8 @@ function syncToChoice(){
  get('choiceSpeak').checked=get('speak').checked;
 }
 function render(next){
+ if(page==='review'&&next!=='review'||next==='review'&&page!=='review')resetReview();
+ if(['doctor','doctor-login'].includes(page)&&!['doctor','doctor-login'].includes(next))closeDoctorSession();
  if(next==='welcome')patientIdentity=null;
  if(page==='voice'&&next!=='voice')window.triageVoiceStop?.();
  page=next;document.body.dataset.screen=next;
@@ -38,7 +78,6 @@ function render(next){
  if(next==='form')document.body.classList.remove('form-hidden');
  if(next==='voice')document.body.classList.add('form-hidden');
  if(next==='options')syncToChoice();
- if(next==='review'&&patientIdentity)get('reviewDni').value=patientIdentity.dni;
  if(next==='form'&&['p0','p1','p2','p3','p4','p5'].every(id=>get(id).hidden))get('p0').hidden=false;
  window.scrollTo({top:0,behavior:'instant'});
 }
@@ -50,37 +89,63 @@ get('patientIdForm').onsubmit=e=>{
  render('options');
 };
 async function openDoctorLogin(){
- get('doctorLoginError').textContent='';
+ // El acceso al rol médico siempre empieza desde una pantalla de login vacía.
+ const entryId=++doctorNavigationId;
+ clearDoctorView();
+ render('doctor-login');
+ get('doctorSelect').replaceChildren(new Option('Cargando profesionales…',''));
  try{
-  const me=await fetch('/api/doctor/me');if(me.ok){const info=await me.json();get('doctorLoggedName').textContent=info.doctor.nombre;render('doctor');return}
-  const r=await fetch('/api/doctor/list'),items=await r.json();if(!r.ok)throw Error('No se pudo consultar el personal.');
+  await doctorExitPromise;
+  // También descarta una cookie anterior a una recarga del navegador.
+  const logoutResponse=await fetch('/api/doctor/logout',{method:'POST',credentials:'same-origin',cache:'no-store'});
+  if(!logoutResponse.ok)throw Error('No se pudo cerrar la sesión anterior. Reintenta el acceso.');
+  if(entryId!==doctorNavigationId||page!=='doctor-login')return;
+  const r=await fetch('/api/doctor/list',{cache:'no-store'});
+  const items=await r.json();if(!r.ok)throw Error('No se pudo consultar el personal.');
+  if(entryId!==doctorNavigationId||page!=='doctor-login')return;
   get('doctorSelect').replaceChildren(new Option('Selecciona un profesional',''));
   for(const doctor of items)get('doctorSelect').append(new Option(doctor.nombre,String(doctor.id)));
-  render('doctor-login');
- }catch(e){render('doctor-login');get('doctorLoginError').textContent=e.message}
+ }catch(e){
+  if(entryId!==doctorNavigationId||page!=='doctor-login')return;
+  get('doctorSelect').replaceChildren(new Option('No se pudo cargar el personal',''));
+  get('doctorLoginError').textContent=e.message;
+ }
 }
 get('entryDoctor').onclick=openDoctorLogin;
 get('doctorLoginForm').onsubmit=async e=>{
- e.preventDefault();get('doctorLoginError').textContent='';
+ e.preventDefault();if(page!=='doctor-login')return;
+ const entryId=doctorNavigationId;
+ get('doctorLoginError').textContent='';
  try{
-  const r=await fetch('/api/doctor/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:get('doctorSelect').value,password:get('doctorPassword').value})});
+  const r=await fetch('/api/doctor/login',{method:'POST',headers:{'content-type':'application/json'},credentials:'same-origin',body:JSON.stringify({id:get('doctorSelect').value,password:get('doctorPassword').value})});
   const data=await r.json();if(!r.ok)throw Error(data.error||'Credenciales incorrectas.');
+  // Una respuesta demorada no debe reabrir la bandeja si el usuario salió.
+  if(entryId!==doctorNavigationId||page!=='doctor-login'){
+   await fetch('/api/doctor/logout',{method:'POST',credentials:'same-origin'}).catch(()=>{});
+   return;
+  }
   get('doctorPassword').value='';get('doctorLoggedName').textContent=data.doctor.nombre;
   render('doctor');
- }catch(err){get('doctorLoginError').textContent=err.message}
+ }catch(err){if(entryId===doctorNavigationId&&page==='doctor-login')get('doctorLoginError').textContent=err.message}
 };
 const logout=document.createElement('button');logout.type='button';logout.id='doctorLogout';logout.textContent='Cerrar sesión';logout.className='btn-sm';
 const doctorHeader=document.createElement('div');doctorHeader.className='doctor-login-info';
 const doctorLoggedName=document.createElement('strong');doctorLoggedName.id='doctorLoggedName';doctorHeader.append(doctorLoggedName,logout);
 get('doctor').querySelector('h1').after(doctorHeader);
-logout.onclick=async()=>{await fetch('/api/doctor/logout',{method:'POST'}).catch(()=>{});get('caseView').hidden=true;render('welcome')};
+logout.onclick=()=>render('welcome'); // salir dispara el cierre de sesión en render()
 get('entryReview').onclick=()=>render('review');
 get('reviewForm').onsubmit=async e=>{
  e.preventDefault();const dni=get('reviewDni').value.trim(),status=get('reviewStatus'),list=get('reviewList');
+ reviewController?.abort();
+ const controller=new AbortController();reviewController=controller;
+ const requestId=++reviewRequestId;
  list.replaceChildren();if(!/^\d{8}$/.test(dni)){status.textContent='Ingresa un DNI válido de 8 dígitos.';return}
  status.textContent='Consultando triajes registrados…';
  try{
-  const r=await fetch('/api/cases/by-dni?dni='+encodeURIComponent(dni));const items=await r.json();
+  // Cada consulta se obtiene nuevamente de SQLite a través de la API.
+  const r=await fetch('/api/cases/by-dni?dni='+encodeURIComponent(dni),{signal:controller.signal,cache:'no-store'});
+  const items=await r.json();
+  if(requestId!==reviewRequestId||page!=='review')return;
   if(!r.ok)throw Error(items.error||'No se pudo obtener el historial.');
   status.textContent=items.length?`Se encontraron ${items.length} triaje(s) para el DNI indicado.`:'No se encontraron triajes para este DNI.';
   for(const item of items){
@@ -95,13 +160,15 @@ get('reviewForm').onsubmit=async e=>{
     if(!responses.hidden){responses.hidden=true;return}
     responses.textContent='Cargando respuesta…';responses.hidden=false;
     try{
-     const r=await fetch('/api/cases/by-code?code='+encodeURIComponent(item.code));const c=await r.json();if(!r.ok||c.dni!==dni)throw Error('No se pudo recuperar la respuesta.');
+     const r=await fetch('/api/cases/by-code?code='+encodeURIComponent(item.code),{signal:controller.signal,cache:'no-store'});
+     const c=await r.json();if(requestId!==reviewRequestId||page!=='review')return;
+     if(!r.ok||c.dni!==dni)throw Error('No se pudo recuperar la respuesta.');
      responses.replaceChildren();for(const answer of c.replies||[]){const text=document.createElement('p');text.className='review-message';text.textContent=(answer.author||'Personal de salud')+': '+answer.message;responses.append(text)}
-    }catch(err){responses.textContent=err.message}
+    }catch(err){if(requestId===reviewRequestId&&page==='review'&&err.name!=='AbortError')responses.textContent=err.message}
    };
    card.append(title,info,badge,responses);list.append(card);
   }
- }catch(err){status.textContent=err.message}
+ }catch(err){if(requestId===reviewRequestId&&page==='review'&&err.name!=='AbortError')status.textContent=err.message}
 };
 get('chooseVoice').onclick=()=>render('voice');get('chooseForm').onclick=()=>render('form');
 back.onclick=()=>render(['voice','form'].includes(page)?'options':page==='options'?'identity':'welcome');
