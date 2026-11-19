@@ -1,5 +1,5 @@
-const cache='triagevoz-pc4-reset-navegacion-v1';
-const assets=['/','/index.html','/app.js','/vui.js','/navigation.js','/personality.js','/personality-ui.js','/styles.css','/doctor-avatar.jpg','/icon.svg','/manifest.webmanifest'];
+const cache='triagevoz-pc4-selector-aq-profesional-v3';
+const assets=['/','/index.html','/app.js','/vui.js','/navigation.js','/i18n.js','/i18n-dictionary.js','/personality.js','/personality-ui.js','/styles.css','/doctor-avatar.jpg','/icon.svg','/icono-idiomas-aq.png','/manifest.webmanifest'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(cache).then(store=>store.addAll(assets)));
 });

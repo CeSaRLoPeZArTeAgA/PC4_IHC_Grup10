@@ -463,5 +463,6 @@ window.triageVozApply=(slots,selectedRegion='')=>{
 };
 import './vui.js';
 import './navigation.js';
+import('./i18n.js').catch(error=>console.error('Error del selector de idioma:',error));
 // Actualización colaborativa entre dos navegadores/sesiones de demostración.
 setInterval(()=>{if(!$('doctor').hidden)loadRooms();if(sent&&!$('patient').hidden)refresh()},6000);
